@@ -1,5 +1,6 @@
 package com.ihuntto.bookreader.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
@@ -7,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -16,7 +18,12 @@ import com.ihuntto.bookreader.R;
 import com.ihuntto.bookreader.flip.FlipOver;
 
 public class ViewPagerFlipOver extends ViewPager implements FlipOver {
+    private static final long MIN_CLICK_INTERVAL_MILLIS = 200;
+    private long mClickDownTime;
+    private int mCurrentState;
+
     private OnPageFlipListener mOnPageFlipListener;
+    private PagerAdapter mPagerAdapter;
 
     public ViewPagerFlipOver(@NonNull Context context) {
         super(context);
@@ -29,17 +36,37 @@ public class ViewPagerFlipOver extends ViewPager implements FlipOver {
     @Override
     public void setPageProvider(final PageProvider pageProvider) {
         if (pageProvider == null) {
+            removeOnPageChangeListener(mOnPageChangeListener);
             return;
         }
+        mPagerAdapter = new FlipOverPagerAdapter(pageProvider);
         getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
-                setAdapter(new FlipOverPagerAdapter(pageProvider));
+                setAdapter(mPagerAdapter);
                 getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
         });
         setPageTransformer(true, new DepthPageTransformer());
+        addOnPageChangeListener(mOnPageChangeListener);
     }
+
+    private OnPageChangeListener mOnPageChangeListener = new OnPageChangeListener() {
+        @Override
+        public void onPageScrolled(int i, float v, int i1) {
+
+        }
+
+        @Override
+        public void onPageSelected(int i) {
+
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int i) {
+            mCurrentState = i;
+        }
+    };
 
     // https://developer.android.com/training/animation/screen-slide
     private static class DepthPageTransformer implements ViewPager.PageTransformer {
@@ -118,6 +145,63 @@ public class ViewPagerFlipOver extends ViewPager implements FlipOver {
         @Override
         public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
             container.removeView((View) object);
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        switch (ev.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                mClickDownTime = System.currentTimeMillis();
+                break;
+            case MotionEvent.ACTION_UP:
+                if (mCurrentState == SCROLL_STATE_IDLE &&
+                        System.currentTimeMillis() - mClickDownTime < MIN_CLICK_INTERVAL_MILLIS) {
+                    handleClickPosition(ev.getX(), ev.getY());
+                    return true;
+                }
+                break;
+
+        }
+        return super.onTouchEvent(ev);
+    }
+
+    private void handleClickPosition(float x, float y) {
+        int leftBoundary = getWidth() / 3;
+        int rightBoundary = leftBoundary * 2;
+        if (x < leftBoundary) {
+            performClickLeftArea();
+        } else if (x > rightBoundary) {
+            performClickRightArea();
+        } else {
+            performClickCenterArea();
+        }
+    }
+
+    private void performClickLeftArea() {
+        int leftItem = getCurrentItem() - 1;
+        if (leftItem > -1) {
+            setCurrentItem(leftItem, true);
+        }
+        if (mOnPageFlipListener != null) {
+            mOnPageFlipListener.onFlipLeft();
+        }
+    }
+
+    private void performClickRightArea() {
+        int rightItem = getCurrentItem() + 1;
+        if (rightItem < mPagerAdapter.getCount()) {
+            setCurrentItem(rightItem, true);
+        }
+        if (mOnPageFlipListener != null) {
+            mOnPageFlipListener.onFlipRight();
+        }
+    }
+
+    private void performClickCenterArea() {
+        if (mOnPageFlipListener != null) {
+            mOnPageFlipListener.onPageClick();
         }
     }
 }

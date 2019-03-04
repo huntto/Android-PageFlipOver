@@ -6,14 +6,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.flip.FlipOverPage;
-
-import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -65,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getPageCount() {
-            return mBitmaps.length;
+            return mBitmaps.length * 2;
         }
 
         @Override
@@ -76,16 +74,16 @@ public class MainActivity extends AppCompatActivity {
             return new FlipOverPage(leftPageBitmap, currentPageBitmap, rightPageBitmap);
         }
 
-
         private Bitmap loadBitmap(final int index, final int width, final int height) {
-            if (index < 0 || index > mBitmaps.length - 1 || width <= 0 || height <= 0) {
+            if (index < 0 || index > getPageCount() - 1 || width <= 0 || height <= 0) {
                 Log.e(TAG, "loadBitmap wrong params: index=" + index
                         + " width=" + width
                         + " height=" + height);
                 return null;
             }
+            int bitmapIndex = index % mBitmaps.length;
 
-            Bitmap cachedBitmap = mBitmaps[index];
+            Bitmap cachedBitmap = mBitmaps[bitmapIndex];
             if (cachedBitmap != null
                     && cachedBitmap.getWidth() == width
                     && cachedBitmap.getHeight() == height) {
@@ -93,11 +91,10 @@ public class MainActivity extends AppCompatActivity {
                 return cachedBitmap;
             }
 
-
             cachedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             cachedBitmap.eraseColor(Color.WHITE);
             Canvas canvas = new Canvas(cachedBitmap);
-            Drawable drawable = getResources().getDrawable(mBitmapIds[index]);
+            Drawable drawable = getResources().getDrawable(mBitmapIds[bitmapIndex]);
 
             int margin = 7;
             int border = 3;
@@ -128,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
             drawable.setBounds(dirtyRect);
             drawable.draw(canvas);
 
-            mBitmaps[index] = cachedBitmap;
+            mBitmaps[bitmapIndex] = cachedBitmap;
 
             return cachedBitmap;
         }
