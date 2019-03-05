@@ -65,6 +65,11 @@ public class ViewPagerFlipOver extends ViewPager implements FlipOver {
         @Override
         public void onPageScrollStateChanged(int i) {
             mCurrentState = i;
+            if (mCurrentState == SCROLL_STATE_DRAGGING) {
+                if (mOnPageFlipListener != null) {
+                    mOnPageFlipListener.onFlipStart();
+                }
+            }
         }
     };
 
@@ -184,18 +189,12 @@ public class ViewPagerFlipOver extends ViewPager implements FlipOver {
         if (leftItem > -1) {
             setCurrentItem(leftItem, true);
         }
-        if (mOnPageFlipListener != null) {
-            mOnPageFlipListener.onFlipLeft();
-        }
     }
 
     private void performClickRightArea() {
         int rightItem = getCurrentItem() + 1;
         if (rightItem < mPagerAdapter.getCount()) {
             setCurrentItem(rightItem, true);
-        }
-        if (mOnPageFlipListener != null) {
-            mOnPageFlipListener.onFlipRight();
         }
     }
 

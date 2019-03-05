@@ -40,14 +40,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private FlipOver.OnPageFlipListener mOnPageFlipListener = new FlipOver.OnPageFlipListener() {
-        @Override
-        public void onFlipLeft() {
-
-        }
 
         @Override
-        public void onFlipRight() {
-
+        public void onFlipStart() {
+            mPageEditView.dismiss();
         }
 
         @Override

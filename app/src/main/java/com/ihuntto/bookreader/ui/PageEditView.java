@@ -83,14 +83,15 @@ public class PageEditView extends FrameLayout implements View.OnClickListener {
     }
 
     public void switchVisibility() {
-        if (mVisibilityState == VISIBILITY_STATE_DISMISSED) {
-            show();
-        } else if (mVisibilityState == VISIBILITY_STATE_SHOWED) {
+        if (!show()) {
             dismiss();
         }
     }
 
-    private void show() {
+    public boolean show() {
+        if (mVisibilityState != VISIBILITY_STATE_DISMISSED) {
+            return false;
+        }
         ObjectAnimator translateIn = ObjectAnimator.ofFloat(mToolbarLayout, "translationY",
                 mToolbarLayout.getHeight(), 0);
 
@@ -125,9 +126,13 @@ public class PageEditView extends FrameLayout implements View.OnClickListener {
 
             }
         });
+        return true;
     }
 
-    private void dismiss() {
+    public boolean dismiss() {
+        if (mVisibilityState != VISIBILITY_STATE_SHOWED) {
+            return false;
+        }
         ObjectAnimator translateOut = ObjectAnimator.ofFloat(mToolbarLayout, "translationY",
                 0, mToolbarLayout.getHeight());
         translateOut.setInterpolator(new LinearInterpolator());
@@ -162,5 +167,6 @@ public class PageEditView extends FrameLayout implements View.OnClickListener {
 
             }
         });
+        return true;
     }
 }

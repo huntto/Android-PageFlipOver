@@ -9,9 +9,7 @@ public interface FlipOver {
     }
 
     public interface OnPageFlipListener {
-        void onFlipLeft();
-
-        void onFlipRight();
+        void onFlipStart();
 
         void onPageClick();
     }
