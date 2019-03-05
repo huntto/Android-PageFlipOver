@@ -12,11 +12,13 @@ import android.util.Log;
 
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.flip.FlipOverPage;
+import com.ihuntto.bookreader.ui.PageEditView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private FlipOver mFlipOver;
+    private PageEditView mPageEditView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
         mFlipOver = findViewById(R.id.view_pager_flip_over);
         mFlipOver.setOnPageFlipListener(mOnPageFlipListener);
         mFlipOver.setPageProvider(mPageProvider);
+
+        mPageEditView = findViewById(R.id.page_edit_view);
     }
 
     @Override
@@ -48,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onPageClick() {
-
+            mPageEditView.switchVisibility();
         }
     };
 
