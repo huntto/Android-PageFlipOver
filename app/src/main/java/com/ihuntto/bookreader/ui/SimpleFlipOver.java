@@ -29,6 +29,7 @@ public class SimpleFlipOver extends View implements FlipOver {
     private int mCurrentPageIndex = 0;
 
     private int mTouchSlop;
+    private int mActivePointerId = -1;
     private float mDownMotionX;
     private float mDownMotionY;
     private int mAnimateMinStep;
@@ -67,7 +68,7 @@ public class SimpleFlipOver extends View implements FlipOver {
     private void init(Context context) {
         ViewConfiguration configuration = ViewConfiguration.get(context);
         float density = context.getResources().getDisplayMetrics().density;
-        mMinimumVelocity = (int)(400.0F * density);
+        mMinimumVelocity = (int) (400.0F * density);
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
         mTouchSlop = configuration.getScaledPagingTouchSlop();
 
@@ -97,13 +98,15 @@ public class SimpleFlipOver extends View implements FlipOver {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 return onTouchDown(event);
+            case MotionEvent.ACTION_POINTER_DOWN:
+                return onTouchPointerDown(event);
             case MotionEvent.ACTION_MOVE:
-                onTouchMove(event);
-                break;
+                return onTouchMove(event);
+            case MotionEvent.ACTION_POINTER_UP:
+                return onTouchPointerUp(event);
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
-                onTouchUp(event);
-                break;
+                return onTouchUp(event);
             default:
                 break;
         }
@@ -114,6 +117,7 @@ public class SimpleFlipOver extends View implements FlipOver {
         if (mFlipState != STATE_FLIP_NONE) {
             return false;
         }
+        mActivePointerId = event.getPointerId(0);
         mClickDownTime = System.currentTimeMillis();
         mDownMotionX = event.getX();
         mDownMotionY = event.getY();
@@ -122,14 +126,26 @@ public class SimpleFlipOver extends View implements FlipOver {
         return true;
     }
 
+    private boolean onTouchPointerDown(MotionEvent event) {
+        int activePointerIndex = event.getActionIndex();
+        mDownMotionX = event.getX(activePointerIndex);
+        mDownMotionY = event.getY(activePointerIndex);
+        mActivePointerId = event.getPointerId(activePointerIndex);
+        return true;
+    }
+
     private boolean onTouchMove(MotionEvent event) {
         if (mPageProvider == null) {
             return false;
         }
+        if (mActivePointerId == -1) {
+            return false;
+        }
+        int pointerIndex = event.findPointerIndex(mActivePointerId);
         if (mFlipState == STATE_FLIP_NONE) {
-            float x = event.getX();
+            float x = event.getX(pointerIndex);
             float xDiff = Math.abs(x - mDownMotionX);
-            float y = event.getY();
+            float y = event.getY(pointerIndex);
             float yDiff = Math.abs(y - mDownMotionY);
             if (xDiff > (float) mTouchSlop && xDiff > yDiff) {
                 FlipOverPage page = mPageProvider.updatePage(mCurrentPageIndex, getWidth(), getHeight());
@@ -151,16 +167,30 @@ public class SimpleFlipOver extends View implements FlipOver {
             }
         }
         if (mFlipState != STATE_FLIP_NONE) {
-            mTargetX = (int) event.getX();
+            mTargetX = (int) event.getX(pointerIndex);
+        }
+        return true;
+    }
+
+    private boolean onTouchPointerUp(MotionEvent event) {
+        int pointerIndex = event.getActionIndex();
+        int pointerId = event.getPointerId(pointerIndex);
+        if (pointerId == mActivePointerId) {
+            int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+            this.mActivePointerId = event.getPointerId(newPointerIndex);
+            if (mVelocityTracker != null) {
+                mVelocityTracker.clear();
+            }
         }
         return true;
     }
 
     private boolean onTouchUp(MotionEvent event) {
+        int activePointerIndex = event.findPointerIndex(this.mActivePointerId);
+        VelocityTracker velocityTracker = this.mVelocityTracker;
+        velocityTracker.computeCurrentVelocity(1000, (float) mMaximumVelocity);
+        int velocity = (int) velocityTracker.getXVelocity(mActivePointerId);
         if (mFlipState != STATE_FLIP_NONE) {
-            VelocityTracker velocityTracker = this.mVelocityTracker;
-            velocityTracker.computeCurrentVelocity(1000, (float)mMaximumVelocity);
-            int velocity = (int)velocityTracker.getXVelocity();
             if (velocity > mMinimumVelocity) {
                 if (velocity > 0) {
                     mTargetX = getWidth();
@@ -176,9 +206,11 @@ public class SimpleFlipOver extends View implements FlipOver {
                 }
             }
         }
-        if (mFlipState == STATE_FLIP_NONE &&
-                System.currentTimeMillis() - mClickDownTime < MIN_CLICK_INTERVAL_MILLIS) {
-            handleClickPosition(event.getX(), event.getY());
+
+        if (mFlipState == STATE_FLIP_NONE
+                && Math.abs(velocity) < mMinimumVelocity
+                && System.currentTimeMillis() - mClickDownTime < MIN_CLICK_INTERVAL_MILLIS) {
+            handleClickPosition(event.getX(activePointerIndex), event.getY(activePointerIndex));
             return true;
         }
         return false;
@@ -271,7 +303,7 @@ public class SimpleFlipOver extends View implements FlipOver {
         if (length < mAnimateMinStep) {
             mPageSplitX = mTargetX;
         } else {
-            float step = (float) Math.sqrt(length);
+            float step = length / 2;
             if (mPageSplitX > mTargetX) {
                 mPageSplitX -= step;
             } else {
