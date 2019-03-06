@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
             Bitmap cachedBitmap = mBitmaps[bitmapIndex];
             if (cachedBitmap != null
+                    && !cachedBitmap.isRecycled()
                     && cachedBitmap.getWidth() == width
                     && cachedBitmap.getHeight() == height) {
                 Log.i(TAG, "use cached bitmap");

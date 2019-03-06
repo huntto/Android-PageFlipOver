@@ -1,58 +1,75 @@
 package com.ihuntto.bookreader.ui;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
-import android.view.VelocityTracker;
-import android.view.View;
-import android.view.ViewConfiguration;
-import android.view.ViewParent;
+import android.view.LayoutInflater;
+import android.widget.FrameLayout;
 
+import com.ihuntto.bookreader.R;
 import com.ihuntto.bookreader.flip.FlipOver;
+import com.ihuntto.bookreader.flip.FlipOverPage;
 
-public class SimulateFlipOver extends View implements FlipOver {
+import fi.harism.curl.CurlPage;
+import fi.harism.curl.CurlView;
+
+public class SimulateFlipOver extends FrameLayout implements FlipOver {
     private OnPageFlipListener mOnPageFlipListener;
-    private PageProvider mPageProvider;
-    private VelocityTracker mVelocityTracker;
-    private float mLastMotionX;
-    private float mLastMotionY;
-    private float mInitialMotionX;
-    private float mInitialMotionY;
-    private int mActivePointerId = -1;
-    private boolean mIsBeingDragged;
-    private int mMinimumVelocity;
-    private int mMaximumVelocity;
-    private int mTouchSlop;
+    private CurlView mCurlView;
 
-    public SimulateFlipOver(Context context) {
+    public SimulateFlipOver(@NonNull Context context) {
         super(context);
         init(context);
     }
 
-    public SimulateFlipOver(Context context, @Nullable AttributeSet attrs) {
+    public SimulateFlipOver(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    public SimulateFlipOver(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public SimulateFlipOver(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }
 
-    public SimulateFlipOver(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public SimulateFlipOver(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context);
     }
 
     private void init(Context context) {
-        ViewConfiguration configuration = ViewConfiguration.get(context);
-        mTouchSlop = configuration.getScaledPagingTouchSlop();
+        LayoutInflater.from(context).inflate(R.layout.layout_simulate_flip_over, this);
+        mCurlView = findViewById(R.id.page_curl_view);
     }
 
     @Override
-    public void setPageProvider(PageProvider pageProvider) {
-        mPageProvider = pageProvider;
+    public void setPageProvider(final PageProvider pageProvider) {
+        mCurlView.setCurrentIndex(0);
+        mCurlView.setBackgroundColor(0xCCCCCC);
+        mCurlView.setRenderLeftPage(false);
+        mCurlView.setViewMode(CurlView.SHOW_ONE_PAGE);
+        mCurlView.setPageProvider(new CurlView.PageProvider() {
+            @Override
+            public int getPageCount() {
+                if (pageProvider != null) {
+                    return pageProvider.getPageCount();
+                }
+                return 0;
+            }
+
+            @Override
+            public void updatePage(CurlPage page, int width, int height, int index) {
+                if (pageProvider != null) {
+                    FlipOverPage flipOverPage = pageProvider.updatePage(index, width, height);
+                    page.setTexture(flipOverPage.getCurrentPageBitmap(), CurlPage.SIDE_FRONT);
+                    page.setColor(Color.rgb(0xee, 0xee, 0xee), CurlPage.SIDE_BACK);
+                } else {
+                    page.setColor(Color.rgb(0xee, 0xee, 0xee), CurlPage.SIDE_BOTH);
+                }
+            }
+        });
     }
 
     @Override
@@ -61,68 +78,14 @@ public class SimulateFlipOver extends View implements FlipOver {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (mVelocityTracker == null) {
-            mVelocityTracker = VelocityTracker.obtain();
-        }
-
-        mVelocityTracker.addMovement(event);
-        int action = event.getActionMasked();
-        int activePointerIndex;
-        float x, y;
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                mLastMotionX = mInitialMotionX = event.getX();
-                mLastMotionY = mInitialMotionY = event.getY();
-                mActivePointerId = event.getPointerId(0);
-                break;
-            case MotionEvent.ACTION_UP:
-                if (mIsBeingDragged) {
-                    VelocityTracker velocityTracker = mVelocityTracker;
-                    velocityTracker.computeCurrentVelocity(1000, (float) mMaximumVelocity);
-                    int initialVelocity = (int) velocityTracker.getXVelocity(mActivePointerId);
-
-                }
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (!mIsBeingDragged) {
-                    activePointerIndex = event.findPointerIndex(mActivePointerId);
-                    if (activePointerIndex == -1) {
-                        break;
-                    }
-
-                    x = event.getX(activePointerIndex);
-                    float xDiff = Math.abs(x - mLastMotionX);
-                    y = event.getY(activePointerIndex);
-                    float yDiff = Math.abs(y - mLastMotionY);
-
-                    if (Math.sqrt(xDiff* xDiff + yDiff * yDiff) > (float) mTouchSlop) {
-                        mIsBeingDragged = true;
-                        mLastMotionX = x;
-                        mLastMotionY = y;
-                        ViewParent parent = getParent();
-                        if (parent != null) {
-                            parent.requestDisallowInterceptTouchEvent(true);
-                        }
-                    }
-                }
-
-                if (mIsBeingDragged) {
-                    activePointerIndex = event.findPointerIndex(mActivePointerId);
-                    x = event.getX(activePointerIndex);
-                    y = event.getY(activePointerIndex);
-                    performDrag(x, y);
-                }
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                if (mIsBeingDragged) {
-
-                }
-        }
-        return true;
+    protected void onDetachedFromWindow() {
+        mCurlView.onPause();
+        super.onDetachedFromWindow();
     }
 
-    private void performDrag(float x, float y) {
-
+    @Override
+    protected void onAttachedToWindow() {
+        mCurlView.onResume();
+        super.onAttachedToWindow();
     }
 }
