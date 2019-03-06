@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -16,6 +17,10 @@ import android.view.View;
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.flip.FlipOverPage;
 import com.ihuntto.bookreader.ui.PageEditView;
+import com.ihuntto.bookreader.ui.SimpleFlipOver;
+import com.ihuntto.bookreader.ui.SimulateFlipOver;
+import com.ihuntto.bookreader.ui.ViewPagerFlipOver;
+import com.ihuntto.bookreader.ui.gl.SimpleGLFlipOver;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -27,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        useViewPagerFlipOver();
+        useFlipOver(ViewPagerFlipOver.class, R.id.view_pager_flip_over);
         mPageEditView = findViewById(R.id.page_edit_view);
     }
 
@@ -148,34 +153,24 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.use_view_pager) {
-            useViewPagerFlipOver();
+            useFlipOver(ViewPagerFlipOver.class, R.id.view_pager_flip_over);
             return true;
-        } else if (id == R.id.use_simulate) {
-            useSimulateFlipOver();
+        } else if (id == R.id.use_third_party) {
+            useFlipOver(SimulateFlipOver.class, R.id.simulate_flip_over);
             return true;
         } else if (id == R.id.use_simple) {
-            useSimpleFlipOver();
+            useFlipOver(SimpleFlipOver.class, R.id.simple_flip_over);
             return true;
+        } else if (id == R.id.use_simple_gl) {
+            useFlipOver(SimpleGLFlipOver.class, R.id.simple_gl_flip_over);
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    private void useViewPagerFlipOver() {
-        hidePrevFlipOver();
-        mFlipOver = findViewById(R.id.view_pager_flip_over);
-        showAndInitFlipOver();
-    }
-
-    private void useSimulateFlipOver() {
-        hidePrevFlipOver();
-        mFlipOver = findViewById(R.id.simulate_flip_over);
-        showAndInitFlipOver();
-    }
-
-    private void useSimpleFlipOver() {
-        hidePrevFlipOver();
-        mFlipOver = findViewById(R.id.simple_flip_over);
+    private void useFlipOver(Class flipOverClazz, @IdRes int viewId) {
+        if (hideFlipOver(flipOverClazz)) return;
+        mFlipOver = findViewById(viewId);
         showAndInitFlipOver();
     }
 
@@ -185,9 +180,13 @@ public class MainActivity extends AppCompatActivity {
         mFlipOver.setPageProvider(mPageProvider);
     }
 
-    private void hidePrevFlipOver() {
+    private boolean hideFlipOver(Class clazz) {
         if (mFlipOver != null) {
+            if (mFlipOver.getClass() == clazz) {
+                return true;
+            }
             ((View) mFlipOver).setVisibility(View.GONE);
         }
+        return false;
     }
 }

@@ -8,13 +8,18 @@
         android:title="@string/action_view_pager"
         app:showAsAction="never" />
     <item
-        android:id="@+id/use_simulate"
-        android:orderInCategory="100"
-        android:title="@string/action_simulate"
-        app:showAsAction="never" />
-    <item
         android:id="@+id/use_simple"
         android:orderInCategory="100"
         android:title="@string/action_simple"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/use_simple_gl"
+        android:orderInCategory="100"
+        android:title="@string/action_simple_gl"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/use_third_party"
+        android:orderInCategory="100"
+        android:title="@string/action_third_party"
         app:showAsAction="never" />
 </menu>

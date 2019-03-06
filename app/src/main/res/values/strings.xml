@@ -4,6 +4,7 @@
     <string name="bright_settings">Bright Settings</string>
     <string name="tts">TTS</string>
     <string name="action_view_pager">ViewPager</string>
-    <string name="action_simulate">Simulate</string>
+    <string name="action_third_party">Third Party</string>
     <string name="action_simple">Simple</string>
+    <string name="action_simple_gl">Simple GL</string>
 </resources>
