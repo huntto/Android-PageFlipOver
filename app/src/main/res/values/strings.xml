@@ -3,4 +3,6 @@
     <string name="font_settings">Font Settings</string>
     <string name="bright_settings">Bright Settings</string>
     <string name="tts">TTS</string>
+    <string name="action_view_pager">ViewPager</string>
+    <string name="action_simulate">Simulate</string>
 </resources>

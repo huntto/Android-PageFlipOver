@@ -9,6 +9,9 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.flip.FlipOverPage;
@@ -24,11 +27,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        mFlipOver = findViewById(R.id.view_pager_flip_over);
-        mFlipOver.setOnPageFlipListener(mOnPageFlipListener);
-        mFlipOver.setPageProvider(mPageProvider);
-
+        useViewPagerFlipOver();
         mPageEditView = findViewById(R.id.page_edit_view);
     }
 
@@ -131,4 +130,51 @@ public class MainActivity extends AppCompatActivity {
             return cachedBitmap;
         }
     };
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.use_view_pager) {
+            useViewPagerFlipOver();
+            return true;
+        } else if (id == R.id.use_simulate) {
+            useSimulateFlipOver();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void useViewPagerFlipOver() {
+        if (mFlipOver != null) {
+            ((View) mFlipOver).setVisibility(View.GONE);
+        }
+        mFlipOver = findViewById(R.id.view_pager_flip_over);
+        ((View) mFlipOver).setVisibility(View.VISIBLE);
+        mFlipOver.setOnPageFlipListener(mOnPageFlipListener);
+        mFlipOver.setPageProvider(mPageProvider);
+    }
+
+    private void useSimulateFlipOver() {
+        if (mFlipOver != null) {
+            ((View) mFlipOver).setVisibility(View.GONE);
+        }
+        mFlipOver = findViewById(R.id.simulate_flip_over);
+        ((View) mFlipOver).setVisibility(View.VISIBLE);
+        mFlipOver.setOnPageFlipListener(mOnPageFlipListener);
+        mFlipOver.setPageProvider(mPageProvider);
+    }
 }
