@@ -25,6 +25,16 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <com.ihuntto.bookreader.ui.SimpleFlipOver
+        android:id="@+id/simple_flip_over"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.ihuntto.bookreader.ui.PageEditView
         android:id="@+id/page_edit_view"
         android:layout_width="match_parent"

@@ -153,28 +153,41 @@ public class MainActivity extends AppCompatActivity {
         } else if (id == R.id.use_simulate) {
             useSimulateFlipOver();
             return true;
+        } else if (id == R.id.use_simple) {
+            useSimpleFlipOver();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
     private void useViewPagerFlipOver() {
-        if (mFlipOver != null) {
-            ((View) mFlipOver).setVisibility(View.GONE);
-        }
+        hidePrevFlipOver();
         mFlipOver = findViewById(R.id.view_pager_flip_over);
+        showAndInitFlipOver();
+    }
+
+    private void useSimulateFlipOver() {
+        hidePrevFlipOver();
+        mFlipOver = findViewById(R.id.simulate_flip_over);
+        showAndInitFlipOver();
+    }
+
+    private void useSimpleFlipOver() {
+        hidePrevFlipOver();
+        mFlipOver = findViewById(R.id.simple_flip_over);
+        showAndInitFlipOver();
+    }
+
+    private void showAndInitFlipOver() {
         ((View) mFlipOver).setVisibility(View.VISIBLE);
         mFlipOver.setOnPageFlipListener(mOnPageFlipListener);
         mFlipOver.setPageProvider(mPageProvider);
     }
 
-    private void useSimulateFlipOver() {
+    private void hidePrevFlipOver() {
         if (mFlipOver != null) {
             ((View) mFlipOver).setVisibility(View.GONE);
         }
-        mFlipOver = findViewById(R.id.simulate_flip_over);
-        ((View) mFlipOver).setVisibility(View.VISIBLE);
-        mFlipOver.setOnPageFlipListener(mOnPageFlipListener);
-        mFlipOver.setPageProvider(mPageProvider);
     }
 }

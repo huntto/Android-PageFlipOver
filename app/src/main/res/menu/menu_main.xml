@@ -12,4 +12,9 @@
         android:orderInCategory="100"
         android:title="@string/action_simulate"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/use_simple"
+        android:orderInCategory="100"
+        android:title="@string/action_simple"
+        app:showAsAction="never" />
 </menu>

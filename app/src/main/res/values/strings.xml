@@ -5,4 +5,5 @@
     <string name="tts">TTS</string>
     <string name="action_view_pager">ViewPager</string>
     <string name="action_simulate">Simulate</string>
+    <string name="action_simple">Simple</string>
 </resources>
