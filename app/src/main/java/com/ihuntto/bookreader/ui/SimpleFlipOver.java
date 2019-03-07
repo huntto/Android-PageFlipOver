@@ -191,7 +191,7 @@ public class SimpleFlipOver extends View implements FlipOver {
         velocityTracker.computeCurrentVelocity(1000, (float) mMaximumVelocity);
         int velocity = (int) velocityTracker.getXVelocity(mActivePointerId);
         if (mFlipState != STATE_FLIP_NONE) {
-            if (velocity > mMinimumVelocity) {
+            if (Math.abs(velocity) > mMinimumVelocity) {
                 if (velocity > 0) {
                     mTargetX = getWidth();
                 } else {
