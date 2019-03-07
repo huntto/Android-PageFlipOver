@@ -20,6 +20,7 @@ import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
+import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
@@ -33,6 +34,7 @@ import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glTexParameteri;
 import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
+import static android.opengl.GLES20.glUniform2f;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
@@ -47,7 +49,6 @@ public final class PageMesh {
     private static final String TAG = PageMesh.class.getSimpleName();
 
     private static final int POSITION_COMPONENT_COUNT = 2;
-    private static final int COORDINATES_COMPONENT_COUNT = 2;
     private static final int BYTES_PER_FLOAT = 4;
 
     private static final String U_MATRIX = "uMatrix";
@@ -55,12 +56,11 @@ public final class PageMesh {
     private static final String U_FLAT = "uFlat";
     private static final String U_FOLD_LINE_POINT1 = "uFoldLinePoint1";
     private static final String U_FOLD_LINE_POINT2 = "uFoldLinePoint2";
+    private static final String U_SIZE = "uSize";
 
     private static final String A_POSITION = "aPosition";
-    private static final String A_TEXTURE_COORDINATES = "aTextureCoordinates";
 
     private static FloatBuffer sVertexData;
-    private static FloatBuffer sTextureCoordinatesData;
     private static int sProgram;
 
     private static int uMatrixLocation;
@@ -68,9 +68,9 @@ public final class PageMesh {
     private static int uFlatLocation;
     private static int uFoldLinePoint1Location;
     private static int uFoldLinePoint2Location;
+    private static int uSizeLocation;
 
     private static int aPositionLocation;
-    private static int aTextureCoordinatesLocation;
     private static int sWidth;
     private static int sHeight;
 
@@ -92,9 +92,9 @@ public final class PageMesh {
         uFlatLocation = glGetUniformLocation(sProgram, U_FLAT);
         uFoldLinePoint1Location = glGetUniformLocation(sProgram, U_FOLD_LINE_POINT1);
         uFoldLinePoint2Location = glGetUniformLocation(sProgram, U_FOLD_LINE_POINT2);
+        uSizeLocation = glGetUniformLocation(sProgram, U_SIZE);
 
         aPositionLocation = glGetAttribLocation(sProgram, A_POSITION);
-        aTextureCoordinatesLocation = glGetAttribLocation(sProgram, A_TEXTURE_COORDINATES);
     }
 
     public static void updateMesh(int width, int height) {
@@ -102,35 +102,45 @@ public final class PageMesh {
         sHeight = height;
 
         final int step = 5;
+        final int wCount = width / step;
+        final int hCount = height / step;
 
-        for (int w = 0; w < sWidth; w += step) {
-            for (int h = 0; h < sHeight; h += step) {
+        final float[] vertices = new float[wCount
+                * hCount
+                * 6
+                * POSITION_COMPONENT_COUNT];
 
+        int count = 0;
+        int x, y;
+        for (int w = 0; w < wCount; w++) {
+            x = w * step;
+            for (int h = 0; h < hCount; h++) {
+                y = h * step;
+
+                vertices[count++] = x;
+                vertices[count++] = y;
+
+                vertices[count++] = x + step;
+                vertices[count++] = y;
+
+                vertices[count++] = x + step;
+                vertices[count++] = y + step;
+
+                vertices[count++] = x;
+                vertices[count++] = y;
+
+                vertices[count++] = x + step;
+                vertices[count++] = y + step;
+
+                vertices[count++] = x;
+                vertices[count++] = y + step;
             }
         }
 
-        final float[] vertices = {
-                0, sHeight,         // left bottom
-                0, 0,               // left top
-                sWidth, sHeight,    // right bottom
-                sWidth, 0           // right top
-        };
-
-        final float[] textureCoordinates = {
-                0.0f, 1.0f,
-                0.0f, 0.0f,
-                1.0f, 1.0f,
-                1.0f, 0.0f
-        };
         sVertexData = ByteBuffer.allocateDirect(vertices.length * BYTES_PER_FLOAT)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         sVertexData.put(vertices);
-
-        sTextureCoordinatesData = ByteBuffer.allocateDirect(textureCoordinates.length * BYTES_PER_FLOAT)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-        sTextureCoordinatesData.put(textureCoordinates);
     }
 
     private long mBitmapHashCode = 0;
@@ -193,22 +203,18 @@ public final class PageMesh {
         glUniformMatrix4fv(uMatrixLocation, 1, false, mMVPMatrix, 0);
 
         glUniform1f(uFlatLocation, mIsFlat ? 1 : 0);
+        glUniform2f(uSizeLocation, sWidth, sHeight);
 
         sVertexData.position(0);
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
                 false, 0, sVertexData);
         glEnableVertexAttribArray(aPositionLocation);
 
-        sTextureCoordinatesData.position(0);
-        glVertexAttribPointer(aTextureCoordinatesLocation, COORDINATES_COMPONENT_COUNT, GL_FLOAT,
-                false, 0, sTextureCoordinatesData);
-        glEnableVertexAttribArray(aTextureCoordinatesLocation);
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mTextureId);
         glUniform1i(uTextureUnitLocation, 0);
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glDrawArrays(GL_TRIANGLES, 0, sVertexData.limit() / POSITION_COMPONENT_COUNT);
     }
 
     public void flat() {
