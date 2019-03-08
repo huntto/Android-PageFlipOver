@@ -11,6 +11,8 @@ varying vec4 vBlendColor;
 
 const float BACK_Z = 1.0;
 const float FRONT_Z = 0.9;
+const float PI = 3.1415927;
+
 varying float vIsMix;
 
 void main() {
@@ -36,11 +38,12 @@ void main() {
         float dist = abs(current) / sqrt(dragVec.x * dragVec.x + dragVec.y * dragVec.y);
 
         vIsMix = 0.0;
+        // 求相对于中垂线的对称点
+        // 求得拉拽方向的单位向量
+        vec2 normalizedDragVec = normalize(dragVec);
         // 如果origin和current符号相同，则在中垂线同侧，否则异侧
-        if (origin * current > 0.0) {
-            // 求相对于中垂线的对称点
-            // 求得拉拽方向的单位向量
-            vec2 normalizedDragVec = normalize(dragVec);
+        bool needFold = origin * current > 0.0;
+        if (needFold) {
             // 当前点移动到对称点位置
             vec2 symmetric = aPosition + (dist * 2.0) * normalizedDragVec;
             newPosition = vec3(symmetric.xy, FRONT_Z);
@@ -48,8 +51,26 @@ void main() {
         }
 
         float radius = uSize.x / 10.0;
-        if (dist < radius) {
-            vBlendColor = vec4(0.5, 0.5, 0.5, 1.0);
+        float maxDist = PI/2.0 * radius;
+        if (dist < maxDist) {
+            vBlendColor = vec4(1.0);
+            float alpha = (maxDist - dist) / radius;
+            float d = radius * sin(alpha);
+            float offsetDist = (maxDist - dist) - d;
+            vec2 offsetPosition = vec2(newPosition.xy) + offsetDist * normalizedDragVec;
+            newPosition.x = offsetPosition.x;
+            newPosition.y = offsetPosition.y;
+
+            float h = radius * cos(alpha);
+            float height;
+            if (needFold) {
+                height = h + radius;
+            } else {
+                height = radius - h;
+            }
+            newPosition.z = BACK_Z - height / (2.0 * radius) * abs(BACK_Z - FRONT_Z);
+            float simpleLight = (h + radius) / (2.0 * radius);
+            vBlendColor = vec4(simpleLight, simpleLight, simpleLight, 1.0);
         } else {
             vBlendColor = vec4(1.0);
         }
