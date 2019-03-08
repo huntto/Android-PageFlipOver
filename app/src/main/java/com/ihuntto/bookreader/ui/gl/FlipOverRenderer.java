@@ -39,6 +39,8 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     private int mCurrentPageIndex;
     private int mWidth;
     private int mHeight;
+    private int mMaxTargetX;
+    private int mMinTargetX;
     private GLSurfaceView mGLSurfaceView;
 
     private float mAnchorY;
@@ -63,6 +65,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         PageMesh.initProgram(mContext);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -71,8 +74,11 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         mWidth = width;
         mHeight = height;
+        mMaxTargetX = width + 1;
+        mMinTargetX = -width - 1;
 
         GLES20.glViewport(0, 0, width, height);
         perspectiveM(mProjectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
@@ -95,20 +101,24 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         while (Math.abs(diffX) > mWidth) {
             diffX /= 2;
         }
+        // 要保证y要比x先到达
         mCurrentX += diffX / 2.5;
-        mCurrentY += (mTargetY - mCurrentY + 1) / 2.5;
+        mCurrentY += (mTargetY - mCurrentY) / 2;
 
-        if (mCurrentX < -mWidth) {
-            if (mFlipState == STATE_FLIP_TO_LEFT) {
-                mCurrentPageIndex++;
+        if (Math.abs(mTargetX - mCurrentX) < 0.5 || Math.abs(mTargetY - mCurrentY) < 0.5) {
+            if (mTargetX == mMinTargetX) {
+                if (mFlipState == STATE_FLIP_TO_LEFT) {
+                    mCurrentPageIndex++;
+                }
+                mFlipState = STATE_FLIP_NONE;
+            } else if (mTargetX == mMaxTargetX) {
+                if (mFlipState == STATE_FLIP_TO_RIGHT) {
+                    mCurrentPageIndex--;
+                }
+                mFlipState = STATE_FLIP_NONE;
             }
-            mFlipState = STATE_FLIP_NONE;
-        } else if (mCurrentX > mWidth) {
-            if (mFlipState == STATE_FLIP_TO_RIGHT) {
-                mCurrentPageIndex--;
-            }
-            mFlipState = STATE_FLIP_NONE;
         }
+
         if (D) {
             Log.d(TAG, "after update state=" + mFlipState
                     + " currentX=" + mCurrentX + "targetX=" + mTargetX
@@ -131,7 +141,6 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             pageMesh.flat();
             pageMesh.draw(viewProjectionMatrix);
         } else {
-            GLES20.glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
             PageMesh foldPage;
             PageMesh flatPage;
             if (mFlipState == STATE_FLIP_TO_LEFT) {
@@ -213,9 +222,9 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         }
         mTargetY = mAnchorY;
         if (side == Side.LEFT) {
-            mTargetX = -mWidth - 1;
+            mTargetX = mMinTargetX;
         } else {
-            mTargetX = mWidth + 1;
+            mTargetX = mMaxTargetX;
         }
     }
 
