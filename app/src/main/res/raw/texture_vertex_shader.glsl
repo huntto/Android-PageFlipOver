@@ -47,6 +47,13 @@ void main() {
             vIsMix = 1.0;
         }
 
+        float radius = uSize.x / 10.0;
+        if (dist < radius) {
+            vBlendColor = vec4(0.5, 0.5, 0.5, 1.0);
+        } else {
+            vBlendColor = vec4(1.0);
+        }
+
         gl_Position = uMatrix * vec4(-newPosition.x, newPosition.y, newPosition.z, 1.0);
     }
 }
