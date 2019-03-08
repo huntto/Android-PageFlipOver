@@ -28,11 +28,17 @@ void main() {
         float current = (aPosition.x - x0) * dragVec.x + (aPosition.y - y0) * dragVec.y;
         // 如果origin和current符号相同，则在中垂线同侧，否则异侧
         if (origin * current > 0.0) {
-            vBlendColor = vec4(1.0, 0.0, 1.0, 1.0);
+            // 求相对于中垂线的对称点
+            // 1. 当前点到中垂线的距离
+            float dist = current / sqrt(dragVec.x * dragVec.x + dragVec.y * dragVec.y);
+            // 2. 求得拉拽方向的单位向量
+            vec2 normalizedDragVec = -normalize(dragVec);
+            // 3. 当前点移动到对称点位置
+            vec2 symmetric = aPosition + (dist * 2.0) * normalizedDragVec;
+            gl_Position = uMatrix * vec4(-symmetric.x, symmetric.y, 0.9998, 1.0);
         } else {
-            vBlendColor = vec4(1.0, 1.0, 1.0, 1.0);
+            gl_Position = uMatrix * vec4(-aPosition.x, aPosition.y, 0.9999, 1.0);
         }
 
-        gl_Position = uMatrix * vec4(-aPosition.x, aPosition.y, 0.9999, 1.0);
     }
 }

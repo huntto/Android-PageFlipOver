@@ -9,6 +9,6 @@ void main() {
     if (uFlat > 0.5) {
         gl_FragColor = texture2D(uTextureUnit, vTextureCoordinates);
     } else {
-        gl_FragColor = texture2D(uTextureUnit, vTextureCoordinates) * vec4(vBlendColor.xyz, 0.6);
+        gl_FragColor = texture2D(uTextureUnit, vTextureCoordinates);
     }
 }
