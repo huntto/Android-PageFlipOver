@@ -2,6 +2,8 @@ package com.ihuntto.bookreader.ui.gl;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.util.Log;
 
 import com.ihuntto.bookreader.BuildConfig;
@@ -21,7 +23,6 @@ import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
 import static android.opengl.GLES20.GL_TRIANGLES;
-import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glDeleteTextures;
@@ -54,8 +55,8 @@ public final class PageMesh {
     private static final String U_MATRIX = "uMatrix";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
     private static final String U_FLAT = "uFlat";
-    private static final String U_FOLD_LINE_POINT1 = "uFoldLinePoint1";
-    private static final String U_FOLD_LINE_POINT2 = "uFoldLinePoint2";
+    private static final String U_ORIGIN_POINT = "uOriginPoint";
+    private static final String U_DRAG_POINT = "uDragPoint";
     private static final String U_SIZE = "uSize";
 
     private static final String A_POSITION = "aPosition";
@@ -66,8 +67,8 @@ public final class PageMesh {
     private static int uMatrixLocation;
     private static int uTextureUnitLocation;
     private static int uFlatLocation;
-    private static int uFoldLinePoint1Location;
-    private static int uFoldLinePoint2Location;
+    private static int uOriginLocation;
+    private static int uDragLocation;
     private static int uSizeLocation;
 
     private static int aPositionLocation;
@@ -90,8 +91,8 @@ public final class PageMesh {
         uMatrixLocation = glGetUniformLocation(sProgram, U_MATRIX);
         uTextureUnitLocation = glGetUniformLocation(sProgram, U_TEXTURE_UNIT);
         uFlatLocation = glGetUniformLocation(sProgram, U_FLAT);
-        uFoldLinePoint1Location = glGetUniformLocation(sProgram, U_FOLD_LINE_POINT1);
-        uFoldLinePoint2Location = glGetUniformLocation(sProgram, U_FOLD_LINE_POINT2);
+        uOriginLocation = glGetUniformLocation(sProgram, U_ORIGIN_POINT);
+        uDragLocation = glGetUniformLocation(sProgram, U_DRAG_POINT);
         uSizeLocation = glGetUniformLocation(sProgram, U_SIZE);
 
         aPositionLocation = glGetAttribLocation(sProgram, A_POSITION);
@@ -150,6 +151,8 @@ public final class PageMesh {
     private final float[] mTranslateMatrix = new float[16];
     private final float[] mScaleMatrix = new float[16];
     private final float[] mMVPMatrix = new float[16];
+    private final PointF mOriginPoint = new PointF();
+    private final PointF mDragPoint = new PointF();
 
     public PageMesh() {
         setIdentityM(mModelMatrix, 0);
@@ -204,6 +207,8 @@ public final class PageMesh {
 
         glUniform1f(uFlatLocation, mIsFlat ? 1 : 0);
         glUniform2f(uSizeLocation, sWidth, sHeight);
+        glUniform2f(uDragLocation, mDragPoint.x, mDragPoint.y);
+        glUniform2f(uOriginLocation, mOriginPoint.x, mOriginPoint.y);
 
         sVertexData.position(0);
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
@@ -222,6 +227,8 @@ public final class PageMesh {
     }
 
     public void fold(float pullOriginX, float pullOriginY, float pullTerminalX, float pullTerminalY) {
+        mOriginPoint.set(pullOriginX, pullOriginY);
+        mDragPoint.set(pullTerminalX, pullTerminalY);
         mIsFlat = false;
     }
 }
