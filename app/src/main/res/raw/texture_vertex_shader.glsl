@@ -27,10 +27,10 @@ varying float vIsMix;
 
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uSize.x, aPosition.y / uSize.y);
-    if (uIsFlat > 0.5) {
-        gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aPosition.x, aPosition.y, uFlatHeight, 1.0);
-    } else {
-        vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
+    vec3 newPosition = vec3(aPosition.xy, uFlatHeight);
+    vBlendColor = vec4(1.0);
+    if (uIsFlat < 0.5) {
+        newPosition = vec3(aPosition.xy, uBaseFoldHeight);
         // 中点
         float x0 = (uDragPoint.x + uOriginPoint.x) / 2.0;
         float y0 = (uDragPoint.y + uOriginPoint.y) / 2.0;
@@ -63,7 +63,6 @@ void main() {
         float radius = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
         float maxDist = PI/2.0 * radius;
         if (dist < maxDist) {
-            vBlendColor = vec4(1.0);
             float alpha = (maxDist - dist) / radius;
             float d = radius * sin(alpha);
             float offsetDist = (maxDist - dist) - d;
@@ -81,10 +80,7 @@ void main() {
             newPosition.z = height + uBaseFoldHeight;
             float simpleLight = (h + radius) / (uMaxFoldHeight - uBaseFoldHeight);
             vBlendColor = vec4(simpleLight, simpleLight, simpleLight, 1.0);
-        } else {
-            vBlendColor = vec4(1.0);
         }
-
-        gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
     }
+    gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
 }
