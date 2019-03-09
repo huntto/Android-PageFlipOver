@@ -2,7 +2,6 @@ package com.ihuntto.bookreader.ui.gl;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.util.Log;
 
@@ -52,7 +51,9 @@ public final class PageMesh {
     private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int BYTES_PER_FLOAT = 4;
 
-    private static final String U_MATRIX = "uMatrix";
+    private static final String U_VIEW_MATRIX = "uViewMatrix";
+    private static final String U_MODEL_MATRIX = "uModelMatrix";
+    private static final String U_PROJECTION_MATRIX = "uProjectionMatrix";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
     private static final String U_FLAT = "uFlat";
     private static final String U_ORIGIN_POINT = "uOriginPoint";
@@ -64,7 +65,9 @@ public final class PageMesh {
     private static FloatBuffer sVertexData;
     private static int sProgram;
 
-    private static int uMatrixLocation;
+    private static int uViewMatrixLocation;
+    private static int uModelMatrixLocation;
+    private static int uProjectionMatrixLocation;
     private static int uTextureUnitLocation;
     private static int uFlatLocation;
     private static int uOriginLocation;
@@ -88,7 +91,9 @@ public final class PageMesh {
         }
         glUseProgram(sProgram);
 
-        uMatrixLocation = glGetUniformLocation(sProgram, U_MATRIX);
+        uViewMatrixLocation = glGetUniformLocation(sProgram, U_VIEW_MATRIX);
+        uModelMatrixLocation = glGetUniformLocation(sProgram, U_MODEL_MATRIX);
+        uProjectionMatrixLocation = glGetUniformLocation(sProgram, U_PROJECTION_MATRIX);
         uTextureUnitLocation = glGetUniformLocation(sProgram, U_TEXTURE_UNIT);
         uFlatLocation = glGetUniformLocation(sProgram, U_FLAT);
         uOriginLocation = glGetUniformLocation(sProgram, U_ORIGIN_POINT);
@@ -148,19 +153,26 @@ public final class PageMesh {
     private int mTextureId;
     private boolean mIsFlat;
     private final float[] mModelMatrix = new float[16];
-    private final float[] mTranslateMatrix = new float[16];
-    private final float[] mScaleMatrix = new float[16];
-    private final float[] mMVPMatrix = new float[16];
     private final PointF mOriginPoint = new PointF();
     private final PointF mDragPoint = new PointF();
 
     public PageMesh() {
+        float[] translateMatrix = new float[16];
+        float[] scaleMatrix = new float[16];
+
+        setIdentityM(translateMatrix, 0);
+        setIdentityM(scaleMatrix, 0);
+
         setIdentityM(mModelMatrix, 0);
-        setIdentityM(mTranslateMatrix, 0);
-        setIdentityM(mScaleMatrix, 0);
-        translateM(mTranslateMatrix, 0, sWidth / 2f, -sHeight / 2f, 0f);
-        scaleM(mScaleMatrix, 0, 2.0f / sHeight, -2.0f / sHeight, 1.0f);
-        multiplyMM(mModelMatrix, 0, mScaleMatrix, 0, mTranslateMatrix, 0);
+        translateM(translateMatrix, 0, -sWidth / 2f, -sHeight / 2f, 0f);
+        scaleM(scaleMatrix, 0, 2.0f / sHeight, -2.0f / sHeight, 1.0f);
+        multiplyMM(mModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
+
+        final float[] temp = new float[16];
+        setIdentityM(scaleMatrix, 0);
+        scaleM(scaleMatrix, 0, -1.0f, 1.0f, 1.0f);
+        multiplyMM(temp, 0, scaleMatrix, 0, mModelMatrix, 0);
+        System.arraycopy(temp, 0, mModelMatrix, 0, 16);
     }
 
     public void updateTexture(Bitmap bitmap) {
@@ -199,11 +211,12 @@ public final class PageMesh {
         }
     }
 
-    public void draw(float[] viewProjectionMatrix) {
+    public void draw(float[] viewMatrix, float[] projectionMatrix) {
         glUseProgram(sProgram);
 
-        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
-        glUniformMatrix4fv(uMatrixLocation, 1, false, mMVPMatrix, 0);
+        glUniformMatrix4fv(uModelMatrixLocation, 1, false, mModelMatrix, 0);
+        glUniformMatrix4fv(uViewMatrixLocation, 1, false, viewMatrix, 0);
+        glUniformMatrix4fv(uProjectionMatrixLocation, 1, false, projectionMatrix, 0);
 
         glUniform1f(uFlatLocation, mIsFlat ? 1 : 0);
         glUniform2f(uSizeLocation, sWidth, sHeight);

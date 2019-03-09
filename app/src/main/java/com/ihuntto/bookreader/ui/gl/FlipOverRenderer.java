@@ -9,7 +9,6 @@ import android.util.SparseArray;
 
 import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
-import com.ihuntto.bookreader.flip.FlipOverPage;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -56,16 +55,31 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     private SparseArray<PageMesh> mPageMeshes;
     private Context mContext;
+    private static class Color {
+        final float r;
+        final float g;
+        final float b;
+        final float a;
+
+        public Color(float r, float g, float b, float a) {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+        }
+    }
+    private Color mBackgroundColor;
 
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mPageMeshes = new SparseArray<>();
+        mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
         PageMesh.initProgram(mContext);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -74,7 +88,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
         mWidth = width;
         mHeight = height;
         mMaxTargetX = width + 1;
@@ -129,17 +143,14 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
 
         update();
-
-        final float[] viewProjectionMatrix = new float[16];
-        multiplyMM(viewProjectionMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
         if (!isFlipping()) {
             PageMesh pageMesh = getPageMesh(mCurrentPageIndex);
             pageMesh.flat();
-            pageMesh.draw(viewProjectionMatrix);
+            pageMesh.draw(mViewMatrix, mProjectionMatrix);
         } else {
             PageMesh foldPage;
             PageMesh flatPage;
@@ -152,8 +163,8 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             }
             flatPage.flat();
             foldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            flatPage.draw(viewProjectionMatrix);
-            foldPage.draw(viewProjectionMatrix);
+            flatPage.draw(mViewMatrix, mProjectionMatrix);
+            foldPage.draw(mViewMatrix, mProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();

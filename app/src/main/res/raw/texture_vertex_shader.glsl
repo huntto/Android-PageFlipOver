@@ -1,4 +1,7 @@
-uniform mat4 uMatrix;
+uniform mat4 uViewMatrix;
+uniform mat4 uProjectionMatrix;
+uniform mat4 uModelMatrix;
+
 uniform float uFlat;
 uniform vec2 uOriginPoint;
 uniform vec2 uDragPoint;
@@ -18,7 +21,7 @@ varying float vIsMix;
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uSize.x, aPosition.y / uSize.y);
     if (uFlat > 0.5) {
-        gl_Position = uMatrix * vec4(-aPosition.x, aPosition.y, BACK_Z + 0.0001, 1.0);
+        gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aPosition.x, aPosition.y, BACK_Z + 0.0001, 1.0);
     } else {
         vec3 newPosition = vec3(aPosition.xy, BACK_Z);
         // 中点
@@ -75,6 +78,6 @@ void main() {
             vBlendColor = vec4(1.0);
         }
 
-        gl_Position = uMatrix * vec4(-newPosition.x, newPosition.y, newPosition.z, 1.0);
+        gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
     }
 }
