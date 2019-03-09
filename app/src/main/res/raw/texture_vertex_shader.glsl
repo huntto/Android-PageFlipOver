@@ -1,6 +1,7 @@
 uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform mat4 uModelMatrix;
+uniform mat4 uNormalMatrix;
 
 // 是否平展，不折叠
 uniform float uIsFlat;
@@ -24,11 +25,16 @@ uniform float uBaseFoldHeight;
 const float PI = 3.1415927;
 
 varying float vIsMix;
+varying vec3 vNormal;
+varying vec3 vFragPos;
+
+
 
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uSize.x, aPosition.y / uSize.y);
     vec3 newPosition = vec3(aPosition.xy, uFlatHeight);
     vBlendColor = vec4(1.0);
+    vec3 normal = vec3(0.0, 0.0, 1.0);
     if (uIsFlat < 0.5) {
         newPosition = vec3(aPosition.xy, uBaseFoldHeight);
         // 中点
@@ -78,9 +84,12 @@ void main() {
                 height = radius - h;
             }
             newPosition.z = height + uBaseFoldHeight;
-            float simpleLight = (h + radius) / (uMaxFoldHeight - uBaseFoldHeight);
-            vBlendColor = vec4(simpleLight, simpleLight, simpleLight, 1.0);
+            // simple light
+//            float simpleLight = (h + radius) / (uMaxFoldHeight - uBaseFoldHeight);
+//            vBlendColor = vec4(simpleLight, simpleLight, simpleLight, 1.0);
         }
     }
-    gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
+    vNormal = mat3(uNormalMatrix) * normal;
+    vFragPos = vec3(uModelMatrix * vec4(newPosition.xyz, 1.0));
+    gl_Position = uProjectionMatrix * uViewMatrix * vec4(vFragPos, 1.0);
 }

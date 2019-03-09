@@ -35,14 +35,17 @@ import static android.opengl.GLES20.glTexParameteri;
 import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2f;
+import static android.opengl.GLES20.glUniform3f;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.GLUtils.texImage2D;
+import static android.opengl.Matrix.invertM;
 import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.scaleM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.translateM;
+import static android.opengl.Matrix.transposeM;
 
 public final class PageMesh {
     private static final boolean D = BuildConfig.DEBUG;
@@ -54,6 +57,7 @@ public final class PageMesh {
     private static final String U_VIEW_MATRIX = "uViewMatrix";
     private static final String U_MODEL_MATRIX = "uModelMatrix";
     private static final String U_PROJECTION_MATRIX = "uProjectionMatrix";
+    private static final String U_NORMAL_MATRIX = "uNormalMatrix";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
     private static final String U_IS_FLAT = "uIsFlat";
     private static final String U_ORIGIN_POINT = "uOriginPoint";
@@ -63,6 +67,12 @@ public final class PageMesh {
     private static final String U_BASE_FOLD_HEIGHT = "uBaseFoldHeight";
     private static final String U_FLAT_HEIGHT = "uFlatHeight";
 
+    private static final String U_LIGHT_DIRECTION = "uLight.direction";
+    private static final String U_LIGHT_AMBIENT = "uLight.ambient";
+    private static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
+    private static final String U_LIGHT_SPECULAR = "uLight.specular";
+    private static final String U_VIEW_POS = "uViewPos";
+
     private static final String A_POSITION = "aPosition";
 
     private static FloatBuffer sVertexData;
@@ -71,6 +81,7 @@ public final class PageMesh {
     private static int uViewMatrixLocation;
     private static int uModelMatrixLocation;
     private static int uProjectionMatrixLocation;
+    private static int uNormalMatrixLocation;
     private static int uTextureUnitLocation;
     private static int uIsFlatLocation;
     private static int uOriginLocation;
@@ -79,6 +90,11 @@ public final class PageMesh {
     private static int uMaxFoldHeightLocation;
     private static int uBaseFoldHeightLocation;
     private static int uFlatHeightLocation;
+    private static int uLightDirectionLocation;
+    private static int uLightAmbientLocation;
+    private static int uLightDiffuseLocation;
+    private static int uLightSpecularLocation;
+    private static int uViewPosLocation;
 
     private static int aPositionLocation;
     private static int sWidth;
@@ -103,6 +119,7 @@ public final class PageMesh {
         uViewMatrixLocation = glGetUniformLocation(sProgram, U_VIEW_MATRIX);
         uModelMatrixLocation = glGetUniformLocation(sProgram, U_MODEL_MATRIX);
         uProjectionMatrixLocation = glGetUniformLocation(sProgram, U_PROJECTION_MATRIX);
+        uNormalMatrixLocation = glGetUniformLocation(sProgram, U_NORMAL_MATRIX);
         uTextureUnitLocation = glGetUniformLocation(sProgram, U_TEXTURE_UNIT);
         uIsFlatLocation = glGetUniformLocation(sProgram, U_IS_FLAT);
         uOriginLocation = glGetUniformLocation(sProgram, U_ORIGIN_POINT);
@@ -111,6 +128,11 @@ public final class PageMesh {
         uMaxFoldHeightLocation = glGetUniformLocation(sProgram, U_MAX_FOLD_HEIGHT);
         uBaseFoldHeightLocation = glGetUniformLocation(sProgram, U_BASE_FOLD_HEIGHT);
         uFlatHeightLocation = glGetUniformLocation(sProgram, U_FLAT_HEIGHT);
+        uLightDirectionLocation = glGetUniformLocation(sProgram, U_LIGHT_DIRECTION);
+        uLightAmbientLocation = glGetUniformLocation(sProgram, U_LIGHT_AMBIENT);
+        uLightDiffuseLocation = glGetUniformLocation(sProgram, U_LIGHT_DIFFUSE);
+        uLightSpecularLocation = glGetUniformLocation(sProgram, U_LIGHT_SPECULAR);
+        uViewPosLocation = glGetUniformLocation(sProgram, U_VIEW_POS);
 
         aPositionLocation = glGetAttribLocation(sProgram, A_POSITION);
     }
@@ -170,6 +192,7 @@ public final class PageMesh {
     private final float[] mModelMatrix = new float[16];
     private final PointF mOriginPoint = new PointF();
     private final PointF mDragPoint = new PointF();
+    private final float[] mNormalMatrix = new float[16];
 
     public PageMesh() {
         final float[] translateMatrix = new float[16];
@@ -199,6 +222,9 @@ public final class PageMesh {
         multiplyMM(temp1, 0, translateMatrix, 0, scaleMatrix, 0);
         multiplyMM(temp2, 0, mModelMatrix, 0, temp1, 0);
         System.arraycopy(temp2, 0, mModelMatrix, 0, 16);
+
+        invertM(temp1, 0, mModelMatrix, 0);
+        transposeM(mNormalMatrix, 0, temp1, 0);
     }
 
     public void updateTexture(Bitmap bitmap) {
@@ -238,12 +264,13 @@ public final class PageMesh {
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
-    public void draw(float[] viewMatrix, float[] projectionMatrix) {
+    public void draw(FlipOverRenderer.Position viewPosition, float[] viewMatrix, float[] projectionMatrix) {
         glUseProgram(sProgram);
 
         glUniformMatrix4fv(uModelMatrixLocation, 1, false, mModelMatrix, 0);
         glUniformMatrix4fv(uViewMatrixLocation, 1, false, viewMatrix, 0);
         glUniformMatrix4fv(uProjectionMatrixLocation, 1, false, projectionMatrix, 0);
+        glUniformMatrix4fv(uNormalMatrixLocation, 1, false, mNormalMatrix, 0);
 
         glUniform1f(uIsFlatLocation, mIsFlat ? 1 : 0);
         glUniform2f(uSizeLocation, sWidth, sHeight);
@@ -252,6 +279,14 @@ public final class PageMesh {
         glUniform1f(uMaxFoldHeightLocation, sMaxFoldHeight);
         glUniform1f(uBaseFoldHeightLocation, sBaseFoldHeight);
         glUniform1f(uFlatHeightLocation, sFlatHeight);
+
+        glUniform3f(uLightDirectionLocation, 1.0f, 0.0f, 1.0f);
+        glUniform3f(uViewPosLocation, viewPosition.x, viewPosition.y, viewPosition.z);
+
+        // light properties
+        glUniform3f(uLightAmbientLocation, 0.1f, 0.1f, 0.2f);
+        glUniform3f(uLightDiffuseLocation, 0.5f, 0.5f, 0.5f);
+        glUniform3f(uLightSpecularLocation, 1.0f, 1.0f, 1.0f);
 
         sVertexData.position(0);
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,

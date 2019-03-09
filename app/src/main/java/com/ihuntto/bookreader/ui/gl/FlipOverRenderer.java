@@ -55,7 +55,8 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     private SparseArray<PageMesh> mPageMeshes;
     private Context mContext;
-    private static class Color {
+
+    static class Color {
         final float r;
         final float g;
         final float b;
@@ -68,13 +69,28 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             this.a = a;
         }
     }
+
+    static class Position {
+        final float x;
+        final float y;
+        final float z;
+
+        public Position(float x, float y, float z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    }
+
     private Color mBackgroundColor;
+    private Position mViewPosition;
 
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mPageMeshes = new SparseArray<>();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
+        mViewPosition = new Position(0f, 0f, -1.5f);
     }
 
     @Override
@@ -96,7 +112,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
         GLES20.glViewport(0, 0, width, height);
         perspectiveM(mProjectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
-        setLookAtM(mViewMatrix, 0, 0f, 0f, -1.5f, 0f, 0f, 0f, 0f, 1f, 0f);
+        setLookAtM(mViewMatrix, 0, mViewPosition.x, mViewPosition.y, mViewPosition.z, 0f, 0f, 0f, 0f, 1f, 0f);
 
         PageMesh.updateMesh(width, height);
     }
@@ -150,7 +166,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         if (!isFlipping()) {
             PageMesh pageMesh = getPageMesh(mCurrentPageIndex);
             pageMesh.flat();
-            pageMesh.draw(mViewMatrix, mProjectionMatrix);
+            pageMesh.draw(mViewPosition, mViewMatrix, mProjectionMatrix);
         } else {
             PageMesh foldPage;
             PageMesh flatPage;
@@ -163,8 +179,8 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             }
             flatPage.flat();
             foldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            flatPage.draw(mViewMatrix, mProjectionMatrix);
-            foldPage.draw(mViewMatrix, mProjectionMatrix);
+            flatPage.draw(mViewPosition, mViewMatrix, mProjectionMatrix);
+            foldPage.draw(mViewPosition, mViewMatrix, mProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();
