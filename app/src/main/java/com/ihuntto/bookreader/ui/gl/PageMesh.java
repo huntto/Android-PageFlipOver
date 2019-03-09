@@ -83,7 +83,7 @@ public final class PageMesh {
     private static int aPositionLocation;
     private static int sWidth;
     private static int sHeight;
-    private static float sMaxFoldHeight;
+    public static float sMaxFoldHeight;
     private static float sBaseFoldHeight;
     private static float sFlatHeight;
 

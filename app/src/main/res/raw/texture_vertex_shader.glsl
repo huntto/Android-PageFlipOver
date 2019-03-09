@@ -29,6 +29,7 @@ void main() {
     vTextureCoordinates = vec2(aPosition.x / uSize.x, aPosition.y / uSize.y);
     vec3 newPosition = vec3(aPosition.xy, uFlatHeight);
     vBlendColor = vec4(1.0);
+    vIsMix = 0.0;
     if (uIsFlat < 0.5) {
         newPosition = vec3(aPosition.xy, uBaseFoldHeight);
         // 中点
@@ -47,7 +48,6 @@ void main() {
         // 当前点到中垂线的距离
         float dist = abs(current) / sqrt(dragVec.x * dragVec.x + dragVec.y * dragVec.y);
 
-        vIsMix = 0.0;
         // 求相对于中垂线的对称点
         // 求得拉拽方向的单位向量
         vec2 normalizedDragVec = normalize(dragVec);

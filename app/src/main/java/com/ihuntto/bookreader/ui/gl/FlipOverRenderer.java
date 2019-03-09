@@ -20,7 +20,6 @@ import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_SRC_ALPHA;
 import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glEnable;
-import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.perspectiveM;
 import static android.opengl.Matrix.setLookAtM;
 
@@ -55,6 +54,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     private SparseArray<PageMesh> mPageMeshes;
     private Context mContext;
+
     private static class Color {
         final float r;
         final float g;
@@ -68,7 +68,18 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             this.a = a;
         }
     }
+
     private Color mBackgroundColor;
+
+    private static class Vector {
+        final float x;
+        final float y;
+
+        public Vector(float x, float y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
 
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
@@ -132,8 +143,26 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 diffX /= 2;
             }
             // 要保证y要比x先到达
-            mCurrentX += diffX / 2.5;
-            mCurrentY += diffY / 2;
+            float nextX = mCurrentX + diffX / 2.5f;
+            float nextY = mCurrentY + diffY / 2;
+
+            // 中点
+            float x0 = (mWidth + nextX) / 2.0f;
+            float y0 = (mAnchorY + nextY) / 2.0f;
+            // 拉拽方向
+            Vector dragVec = new Vector(nextX - mWidth, nextY - mAnchorY);
+            // 中垂线方向 (x-x0, y-y0)
+            // 中垂线方方向与拉拽方向垂直
+            // (x-x0)*dragVec.x + (y-y0)*dragVec.y = 0
+            // 求得上下边的交点
+            float crossUpX = (y0 * dragVec.y + x0 * dragVec.x) / dragVec.x;
+            float crossDownX = ((y0 - mHeight) * dragVec.y + x0 * dragVec.x) / dragVec.x;
+            if ((crossUpX >= PageMesh.sMaxFoldHeight && crossDownX >= PageMesh.sMaxFoldHeight)
+                    || (crossUpX < PageMesh.sMaxFoldHeight && crossDownX < PageMesh.sMaxFoldHeight)
+                    || Math.abs(crossDownX - crossUpX) < mWidth / 4.0f) {
+                mCurrentX = nextX;
+                mCurrentY = nextY;
+            }
         }
 
         if (D) {
