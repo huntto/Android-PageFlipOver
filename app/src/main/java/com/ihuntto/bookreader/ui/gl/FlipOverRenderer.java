@@ -112,14 +112,10 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         }
 
         float diffX = mTargetX - mCurrentX;
-        while (Math.abs(diffX) > mWidth) {
-            diffX /= 2;
-        }
-        // 要保证y要比x先到达
-        mCurrentX += diffX / 2.5;
-        mCurrentY += (mTargetY - mCurrentY) / 2;
+        float diffY = mTargetY - mCurrentY;
 
-        if (Math.abs(mTargetX - mCurrentX) < 0.5 || Math.abs(mTargetY - mCurrentY) < 0.5) {
+        float dist = (float) Math.sqrt(diffX * diffX + diffY * diffY);
+        if (dist < 3) {
             if (mTargetX == mMinTargetX) {
                 if (mFlipState == STATE_FLIP_TO_LEFT) {
                     mCurrentPageIndex++;
@@ -131,6 +127,13 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 }
                 mFlipState = STATE_FLIP_NONE;
             }
+        } else {
+            while (Math.abs(diffX) > mWidth / 2.5) {
+                diffX /= 2;
+            }
+            // 要保证y要比x先到达
+            mCurrentX += diffX / 2.5;
+            mCurrentY += diffY / 2;
         }
 
         if (D) {
@@ -211,7 +214,6 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 mFlipState = STATE_FLIP_TO_LEFT;
             }
         }
-        mGLSurfaceView.requestRender();
     }
 
     public void flipTo(float x, float y) {

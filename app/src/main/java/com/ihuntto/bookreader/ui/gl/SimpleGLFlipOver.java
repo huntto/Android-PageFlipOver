@@ -134,11 +134,11 @@ public class SimpleGLFlipOver extends GLSurfaceView implements FlipOver {
                 }
                 if (mFlipOverRenderer.isFlipping()) {
                     mOnPageFlipListener.onFlipStart();
+                    mFlipOverRenderer.flipTo(x, y);
+                    requestRender();
                 }
             }
-        }
-
-        if (mFlipOverRenderer.isFlipping()) {
+        } else {
             mFlipOverRenderer.flipTo(x, y);
         }
         return true;
@@ -205,6 +205,7 @@ public class SimpleGLFlipOver extends GLSurfaceView implements FlipOver {
     private void performClickLeftArea() {
         mFlipOverRenderer.startFlipToSide(FlipOverRenderer.Side.RIGHT, mDownMotionY);
         mFlipOverRenderer.endFlipToSide(FlipOverRenderer.Side.RIGHT);
+        requestRender();
 
         if (mOnPageFlipListener != null) {
             mOnPageFlipListener.onFlipStart();
@@ -215,6 +216,7 @@ public class SimpleGLFlipOver extends GLSurfaceView implements FlipOver {
         // flip to left
         mFlipOverRenderer.startFlipToSide(FlipOverRenderer.Side.LEFT, mDownMotionY);
         mFlipOverRenderer.endFlipToSide(FlipOverRenderer.Side.LEFT);
+        requestRender();
 
         if (mOnPageFlipListener != null) {
             mOnPageFlipListener.onFlipStart();
