@@ -2,10 +2,16 @@ uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform mat4 uModelMatrix;
 
-uniform float uFlat;
+// 是否平展，不折叠
+uniform float uIsFlat;
+// 平展情况下，触摸页边的点
 uniform vec2 uOriginPoint;
+// 实时拖拽点
 uniform vec2 uDragPoint;
+// 屏幕尺寸
 uniform vec2 uSize;
+// 折叠时的最大高度
+uniform float uMaxFoldHeight;
 
 attribute vec2 aPosition;
 
@@ -20,7 +26,7 @@ varying float vIsMix;
 
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uSize.x, aPosition.y / uSize.y);
-    if (uFlat > 0.5) {
+    if (uIsFlat > 0.5) {
         gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aPosition.x, aPosition.y, BACK_Z + 0.0001, 1.0);
     } else {
         vec3 newPosition = vec3(aPosition.xy, BACK_Z);
@@ -53,7 +59,7 @@ void main() {
             vIsMix = 1.0;
         }
 
-        float radius = uSize.x / 10.0;
+        float radius = uMaxFoldHeight / 2.0;
         float maxDist = PI/2.0 * radius;
         if (dist < maxDist) {
             vBlendColor = vec4(1.0);
@@ -71,8 +77,8 @@ void main() {
             } else {
                 height = radius - h;
             }
-            newPosition.z = BACK_Z - height / (2.0 * radius) * abs(BACK_Z - FRONT_Z);
-            float simpleLight = (h + radius) / (2.0 * radius);
+            newPosition.z = BACK_Z - height / uMaxFoldHeight * abs(BACK_Z - FRONT_Z);
+            float simpleLight = (h + radius) / uMaxFoldHeight;
             vBlendColor = vec4(simpleLight, simpleLight, simpleLight, 1.0);
         } else {
             vBlendColor = vec4(1.0);

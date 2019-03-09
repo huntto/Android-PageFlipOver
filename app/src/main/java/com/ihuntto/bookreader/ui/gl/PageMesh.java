@@ -55,10 +55,11 @@ public final class PageMesh {
     private static final String U_MODEL_MATRIX = "uModelMatrix";
     private static final String U_PROJECTION_MATRIX = "uProjectionMatrix";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
-    private static final String U_FLAT = "uFlat";
+    private static final String U_IS_FLAT = "uIsFlat";
     private static final String U_ORIGIN_POINT = "uOriginPoint";
     private static final String U_DRAG_POINT = "uDragPoint";
     private static final String U_SIZE = "uSize";
+    private static final String U_MAX_FOLD_HEIGHT = "uMaxFoldHeight";
 
     private static final String A_POSITION = "aPosition";
 
@@ -69,14 +70,16 @@ public final class PageMesh {
     private static int uModelMatrixLocation;
     private static int uProjectionMatrixLocation;
     private static int uTextureUnitLocation;
-    private static int uFlatLocation;
+    private static int uIsFlatLocation;
     private static int uOriginLocation;
     private static int uDragLocation;
     private static int uSizeLocation;
+    private static int uMaxFoldHeightLocation;
 
     private static int aPositionLocation;
     private static int sWidth;
     private static int sHeight;
+    private static float sMaxFoldHeight;
 
     public static void initProgram(Context context) {
         String vertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.texture_vertex_shader);
@@ -95,10 +98,11 @@ public final class PageMesh {
         uModelMatrixLocation = glGetUniformLocation(sProgram, U_MODEL_MATRIX);
         uProjectionMatrixLocation = glGetUniformLocation(sProgram, U_PROJECTION_MATRIX);
         uTextureUnitLocation = glGetUniformLocation(sProgram, U_TEXTURE_UNIT);
-        uFlatLocation = glGetUniformLocation(sProgram, U_FLAT);
+        uIsFlatLocation = glGetUniformLocation(sProgram, U_IS_FLAT);
         uOriginLocation = glGetUniformLocation(sProgram, U_ORIGIN_POINT);
         uDragLocation = glGetUniformLocation(sProgram, U_DRAG_POINT);
         uSizeLocation = glGetUniformLocation(sProgram, U_SIZE);
+        uMaxFoldHeightLocation = glGetUniformLocation(sProgram, U_MAX_FOLD_HEIGHT);
 
         aPositionLocation = glGetAttribLocation(sProgram, A_POSITION);
     }
@@ -106,6 +110,7 @@ public final class PageMesh {
     public static void updateMesh(int width, int height) {
         sWidth = width;
         sHeight = height;
+        sMaxFoldHeight = width / 5.0f;
 
         final int step = 5;
         final int wCount = width / step;
@@ -218,10 +223,11 @@ public final class PageMesh {
         glUniformMatrix4fv(uViewMatrixLocation, 1, false, viewMatrix, 0);
         glUniformMatrix4fv(uProjectionMatrixLocation, 1, false, projectionMatrix, 0);
 
-        glUniform1f(uFlatLocation, mIsFlat ? 1 : 0);
+        glUniform1f(uIsFlatLocation, mIsFlat ? 1 : 0);
         glUniform2f(uSizeLocation, sWidth, sHeight);
         glUniform2f(uDragLocation, mDragPoint.x, mDragPoint.y);
         glUniform2f(uOriginLocation, mOriginPoint.x, mOriginPoint.y);
+        glUniform1f(uMaxFoldHeightLocation, sMaxFoldHeight);
 
         sVertexData.position(0);
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
