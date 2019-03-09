@@ -62,6 +62,7 @@ void main() {
 
         float radius = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
         float maxDist = PI/2.0 * radius;
+        float simpleLight = 1.0;
         if (dist < maxDist) {
             float alpha = (maxDist - dist) / radius;
             float d = radius * sin(alpha);
@@ -78,8 +79,19 @@ void main() {
                 height = radius - h;
             }
             newPosition.z = height + uBaseFoldHeight;
-            float simpleLight = (h + radius) / (uMaxFoldHeight - uBaseFoldHeight);
-            vBlendColor = vec4(simpleLight, simpleLight, simpleLight, 1.0);
+            simpleLight = (h + radius) / (uMaxFoldHeight - uBaseFoldHeight);
+            vBlendColor = vec4(vec3(simpleLight), 1.0);
+        }
+        if (!needFold) {
+            // 计算对称点
+            vec2 symmetric = aPosition - (dist * 2.0) * normalizedDragVec;
+            float offset = uSize.x * 0.015;
+            if (symmetric.x < uSize.x + offset && symmetric.y < uSize.y + offset && symmetric.y > -offset) {
+                if (simpleLight > 0.8) {
+                    simpleLight = 0.8;
+                }
+                vBlendColor = vec4(vec3(simpleLight), 1.0);
+            }
         }
     }
     gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
