@@ -18,8 +18,9 @@ attribute vec2 aPosition;
 varying vec2 vTextureCoordinates;
 varying vec4 vBlendColor;
 
-const float BACK_Z = 1.0;
-const float FRONT_Z = 0.9;
+uniform float uFlatHeight;
+uniform float uBaseFoldHeight;
+
 const float PI = 3.1415927;
 
 varying float vIsMix;
@@ -27,9 +28,9 @@ varying float vIsMix;
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uSize.x, aPosition.y / uSize.y);
     if (uIsFlat > 0.5) {
-        gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aPosition.x, aPosition.y, BACK_Z + 0.0001, 1.0);
+        gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aPosition.x, aPosition.y, uFlatHeight, 1.0);
     } else {
-        vec3 newPosition = vec3(aPosition.xy, BACK_Z);
+        vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
         // 中点
         float x0 = (uDragPoint.x + uOriginPoint.x) / 2.0;
         float y0 = (uDragPoint.y + uOriginPoint.y) / 2.0;
@@ -55,11 +56,11 @@ void main() {
         if (needFold) {
             // 当前点移动到对称点位置
             vec2 symmetric = aPosition + (dist * 2.0) * normalizedDragVec;
-            newPosition = vec3(symmetric.xy, FRONT_Z);
+            newPosition = vec3(symmetric.xy, uMaxFoldHeight);
             vIsMix = 1.0;
         }
 
-        float radius = uMaxFoldHeight / 2.0;
+        float radius = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
         float maxDist = PI/2.0 * radius;
         if (dist < maxDist) {
             vBlendColor = vec4(1.0);
@@ -77,8 +78,8 @@ void main() {
             } else {
                 height = radius - h;
             }
-            newPosition.z = BACK_Z - height / uMaxFoldHeight * abs(BACK_Z - FRONT_Z);
-            float simpleLight = (h + radius) / uMaxFoldHeight;
+            newPosition.z = height + uBaseFoldHeight;
+            float simpleLight = (h + radius) / (uMaxFoldHeight - uBaseFoldHeight);
             vBlendColor = vec4(simpleLight, simpleLight, simpleLight, 1.0);
         } else {
             vBlendColor = vec4(1.0);

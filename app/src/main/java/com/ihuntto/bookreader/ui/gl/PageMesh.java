@@ -60,6 +60,8 @@ public final class PageMesh {
     private static final String U_DRAG_POINT = "uDragPoint";
     private static final String U_SIZE = "uSize";
     private static final String U_MAX_FOLD_HEIGHT = "uMaxFoldHeight";
+    private static final String U_BASE_FOLD_HEIGHT = "uBaseFoldHeight";
+    private static final String U_FLAT_HEIGHT = "uFlatHeight";
 
     private static final String A_POSITION = "aPosition";
 
@@ -75,11 +77,15 @@ public final class PageMesh {
     private static int uDragLocation;
     private static int uSizeLocation;
     private static int uMaxFoldHeightLocation;
+    private static int uBaseFoldHeightLocation;
+    private static int uFlatHeightLocation;
 
     private static int aPositionLocation;
     private static int sWidth;
     private static int sHeight;
     private static float sMaxFoldHeight;
+    private static float sBaseFoldHeight;
+    private static float sFlatHeight;
 
     public static void initProgram(Context context) {
         String vertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.texture_vertex_shader);
@@ -103,6 +109,8 @@ public final class PageMesh {
         uDragLocation = glGetUniformLocation(sProgram, U_DRAG_POINT);
         uSizeLocation = glGetUniformLocation(sProgram, U_SIZE);
         uMaxFoldHeightLocation = glGetUniformLocation(sProgram, U_MAX_FOLD_HEIGHT);
+        uBaseFoldHeightLocation = glGetUniformLocation(sProgram, U_BASE_FOLD_HEIGHT);
+        uFlatHeightLocation = glGetUniformLocation(sProgram, U_FLAT_HEIGHT);
 
         aPositionLocation = glGetAttribLocation(sProgram, A_POSITION);
     }
@@ -110,7 +118,9 @@ public final class PageMesh {
     public static void updateMesh(int width, int height) {
         sWidth = width;
         sHeight = height;
-        sMaxFoldHeight = width / 5.0f;
+        sBaseFoldHeight = 1.0f;
+        sFlatHeight = 0.0f;
+        sMaxFoldHeight = width / 5.0f + sBaseFoldHeight;
 
         final int step = 5;
         final int wCount = width / step;
@@ -162,22 +172,33 @@ public final class PageMesh {
     private final PointF mDragPoint = new PointF();
 
     public PageMesh() {
-        float[] translateMatrix = new float[16];
-        float[] scaleMatrix = new float[16];
+        final float[] translateMatrix = new float[16];
+        final float[] scaleMatrix = new float[16];
 
         setIdentityM(translateMatrix, 0);
         setIdentityM(scaleMatrix, 0);
 
+        // 调整xy
         setIdentityM(mModelMatrix, 0);
         translateM(translateMatrix, 0, -sWidth / 2f, -sHeight / 2f, 0f);
         scaleM(scaleMatrix, 0, 2.0f / sHeight, -2.0f / sHeight, 1.0f);
         multiplyMM(mModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
 
-        final float[] temp = new float[16];
+        final float[] temp1 = new float[16];
         setIdentityM(scaleMatrix, 0);
         scaleM(scaleMatrix, 0, -1.0f, 1.0f, 1.0f);
-        multiplyMM(temp, 0, scaleMatrix, 0, mModelMatrix, 0);
-        System.arraycopy(temp, 0, mModelMatrix, 0, 16);
+        multiplyMM(temp1, 0, scaleMatrix, 0, mModelMatrix, 0);
+        System.arraycopy(temp1, 0, mModelMatrix, 0, 16);
+
+        // 调整z
+        final float[] temp2 = new float[16];
+        setIdentityM(scaleMatrix, 0);
+        scaleM(scaleMatrix, 0, 1.0f, 1.0f, -1.0f / sMaxFoldHeight / 10.0f);
+        setIdentityM(translateMatrix, 0);
+        translateM(translateMatrix, 0, 0.0f, 0.0f, 1.0f);
+        multiplyMM(temp1, 0, translateMatrix, 0, scaleMatrix, 0);
+        multiplyMM(temp2, 0, mModelMatrix, 0, temp1, 0);
+        System.arraycopy(temp2, 0, mModelMatrix, 0, 16);
     }
 
     public void updateTexture(Bitmap bitmap) {
@@ -216,6 +237,7 @@ public final class PageMesh {
         }
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     public void draw(float[] viewMatrix, float[] projectionMatrix) {
         glUseProgram(sProgram);
 
@@ -228,6 +250,8 @@ public final class PageMesh {
         glUniform2f(uDragLocation, mDragPoint.x, mDragPoint.y);
         glUniform2f(uOriginLocation, mOriginPoint.x, mOriginPoint.y);
         glUniform1f(uMaxFoldHeightLocation, sMaxFoldHeight);
+        glUniform1f(uBaseFoldHeightLocation, sBaseFoldHeight);
+        glUniform1f(uFlatHeightLocation, sFlatHeight);
 
         sVertexData.position(0);
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
