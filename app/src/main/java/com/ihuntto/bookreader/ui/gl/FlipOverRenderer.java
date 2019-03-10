@@ -9,6 +9,8 @@ import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.ShadowDebugProgram;
 import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
 import com.ihuntto.bookreader.ui.gl.shape.FoldPage;
 import com.ihuntto.bookreader.ui.gl.util.TextureManager;
@@ -17,12 +19,24 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES20.GL_BLEND;
+import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES20.GL_DEPTH_ATTACHMENT;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_TEST;
+import static android.opengl.GLES20.GL_FRAMEBUFFER;
+import static android.opengl.GLES20.GL_NONE;
 import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_SRC_ALPHA;
+import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBlendFunc;
+import static android.opengl.GLES20.glClear;
+import static android.opengl.GLES20.glClearColor;
+import static android.opengl.GLES20.glDeleteFramebuffers;
 import static android.opengl.GLES20.glEnable;
+import static android.opengl.GLES20.glGenFramebuffers;
+import static android.opengl.GLES20.glGenTextures;
+import static android.opengl.GLES20.glViewport;
+import static android.opengl.GLES32.glFramebufferTexture;
 import static android.opengl.Matrix.perspectiveM;
 import static android.opengl.Matrix.setLookAtM;
 
@@ -92,12 +106,20 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
     }
 
+    private FoldPageShaderProgram mFoldPageShadowShaderProgram;
+    private FlatPageShaderProgram mDebugShadowShaderProgram;
+
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        mFoldPageShadowShaderProgram = new FoldPageShadowShaderProgram(mContext);
+        mFoldPageShadowShaderProgram.compile();
+        mDebugShadowShaderProgram = new ShadowDebugProgram(mContext);
+        mDebugShadowShaderProgram.compile();
     }
 
     @Override
@@ -108,14 +130,14 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mMaxTargetX = width + 1;
         mMinTargetX = -width - 1;
 
-        GLES20.glViewport(0, 0, width, height);
+        glViewport(0, 0, width, height);
         perspectiveM(mProjectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
         setLookAtM(mViewMatrix, 0, 0f, 0f, -1.5f, 0f, 0f, 0f, 0f, 1f, 0f);
 
         int flatHeight = 0;
         int baseFoldHeight = 1;
         int maxFoldHeight = (int) (width / 5.0f + baseFoldHeight);
-        ;
+
         FlatPageShaderProgram flatPageShaderProgram = new FlatPageShaderProgram(mContext);
         flatPageShaderProgram.compile();
         mFlatPage = new FlatPage(flatPageShaderProgram, width, height, flatHeight, maxFoldHeight);
@@ -125,6 +147,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mFoldPage = new FoldPage(foldPageShaderProgram, width, height, baseFoldHeight, maxFoldHeight);
 
         mConstraintX = maxFoldHeight;
+        initShadowFramebuffers(width, height);
     }
 
     private void update() {
@@ -189,7 +212,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
 
         update();
@@ -206,9 +229,21 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
 
-            mFlatPage.draw(mViewMatrix, mProjectionMatrix);
+//            mFlatPage.draw(mViewMatrix, mProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            mFoldPage.draw(mViewMatrix, mProjectionMatrix);
+
+            glViewport(0, 0, mWidth, mHeight);
+            glBindFramebuffer(GL_FRAMEBUFFER, mFrameBufferId);
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+            mFoldPage.draw(mFoldPageShadowShaderProgram, mViewMatrix, mProjectionMatrix);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, mWidth, mHeight);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            mFlatPage.setTexture(mShadowTextureId);
+            mFlatPage.draw(mDebugShadowShaderProgram, mViewMatrix, mProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();
@@ -284,4 +319,60 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     public boolean isFlipping() {
         return mFlipState != STATE_FLIP_NONE;
     }
+
+
+    private int mFrameBufferId;
+    private int mShadowTextureId;
+
+    public void initShadowFramebuffers(int width, int height) {
+        int[] bufferIds = new int[1];
+        glGenFramebuffers(1, bufferIds, 0);
+        if (bufferIds[0] == 0) {
+            if (D) {
+                Log.w(TAG, "Cloud not generate a new OpenGL framebuffer object.");
+            }
+            return;
+        }
+        mFrameBufferId = bufferIds[0];
+
+
+        int[] textureIds = new int[1];
+        GLES20.glGenTextures(1, textureIds, 0);
+        if (textureIds[0] == 0) {
+            if (D) {
+                Log.w(TAG, "Cloud not generate a new OpenGL texutre object.");
+            }
+            glDeleteFramebuffers(1, bufferIds, 0);
+            mFrameBufferId = 0;
+            return;
+        }
+
+        mShadowTextureId = textureIds[0];
+
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mShadowTextureId);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexImage2D(
+                GLES20.GL_TEXTURE_2D,
+                0,
+                GLES20.GL_DEPTH_COMPONENT16,
+                width,
+                height,
+                0,
+                GLES20.GL_DEPTH_COMPONENT,
+                GLES20.GL_FLOAT,
+                null);
+
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBufferId);
+        GLES20.glFramebufferTexture2D(
+                GLES20.GL_FRAMEBUFFER,
+                GLES20.GL_DEPTH_ATTACHMENT,
+                GLES20.GL_TEXTURE_2D,
+                mShadowTextureId,
+                0);
+        glDrawBuffer(GL_NONE);
+    }
+
 }

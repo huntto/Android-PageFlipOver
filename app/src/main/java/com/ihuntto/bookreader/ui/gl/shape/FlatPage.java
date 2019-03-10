@@ -56,26 +56,29 @@ public class FlatPage extends Page {
         mVertexData.put(vertices);
     }
 
+    public void draw(FlatPageShaderProgram program, float[] viewMatrix, float[] projectionMatrix) {
+        program.use();
+
+        multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
+        multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
+        glUniformMatrix4fv(program.getMatrixLocation(), 1, false, mMVPMatrix, 0);
+
+        glUniform2f(program.getPageSizeLocation(), mWidth, mHeight);
+
+        mVertexData.position(0);
+        glVertexAttribPointer(program.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
+                false, 0, mVertexData);
+        glEnableVertexAttribArray(program.getPositionLocation());
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mTextureId);
+        glUniform1i(program.getTextureUnitLocation(), 0);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
+    }
 
     @SuppressWarnings("SuspiciousNameCombination")
     @Override
     public void draw(float[] viewMatrix, float[] projectionMatrix) {
-        mProgram.use();
-
-        multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
-        multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
-        glUniformMatrix4fv(mProgram.getMatrixLocation(), 1, false, mMVPMatrix, 0);
-
-        glUniform2f(mProgram.getPageSizeLocation(), mWidth, mHeight);
-
-        mVertexData.position(0);
-        glVertexAttribPointer(mProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
-                false, 0, mVertexData);
-        glEnableVertexAttribArray(mProgram.getPositionLocation());
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, mTextureId);
-        glUniform1i(mProgram.getTextureUnitLocation(), 0);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
+        draw(mProgram, viewMatrix, projectionMatrix);
     }
 }

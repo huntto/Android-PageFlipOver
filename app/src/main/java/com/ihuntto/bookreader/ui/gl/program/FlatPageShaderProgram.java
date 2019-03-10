@@ -10,8 +10,8 @@ import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
 
 public class FlatPageShaderProgram extends ShaderProgram {
-    private String mVertexShaderSource;
-    private String mFragmentShaderSource;
+    protected String mVertexShaderSource;
+    protected String mFragmentShaderSource;
 
     private static final String U_MATRIX = "uMatrix";
     private static final String U_PAGE_SIZE = "uPageSize";
@@ -23,6 +23,9 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private int mPageSizeLocation;
     private int mTextureUnitLocation;
     private int mPositionLocation;
+
+    protected FlatPageShaderProgram() {
+    }
 
     public FlatPageShaderProgram(Context context) {
         mVertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.flat_page_vertex_shader);
