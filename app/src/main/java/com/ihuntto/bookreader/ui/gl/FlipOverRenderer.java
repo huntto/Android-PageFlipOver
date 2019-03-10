@@ -9,6 +9,10 @@ import android.util.SparseArray;
 
 import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
+import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
+import com.ihuntto.bookreader.ui.gl.shape.Page;
+import com.ihuntto.bookreader.ui.gl.util.TextureManager;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -54,6 +58,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     private SparseArray<PageMesh> mPageMeshes;
     private Context mContext;
+    private Page mFlatPage;
 
     private static class Color {
         final float r;
@@ -110,6 +115,10 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         setLookAtM(mViewMatrix, 0, 0f, 0f, -1.5f, 0f, 0f, 0f, 0f, 1f, 0f);
 
         PageMesh.updateMesh(width, height);
+
+        FlatPageShaderProgram flatPageShaderProgram = new FlatPageShaderProgram(mContext);
+        flatPageShaderProgram.compile();
+        mFlatPage = new FlatPage(flatPageShaderProgram, width, height, (int) PageMesh.sMaxFoldHeight);
     }
 
     private void update() {
@@ -180,22 +189,20 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         update();
 
         if (!isFlipping()) {
-            PageMesh pageMesh = getPageMesh(mCurrentPageIndex);
-            pageMesh.flat();
-            pageMesh.draw(mViewMatrix, mProjectionMatrix);
+            mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
+            mFlatPage.draw(mViewMatrix, mProjectionMatrix);
         } else {
             PageMesh foldPage;
-            PageMesh flatPage;
             if (mFlipState == STATE_FLIP_TO_LEFT) {
                 foldPage = getPageMesh(mCurrentPageIndex);
-                flatPage = getPageMesh(mCurrentPageIndex + 1);
+                mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex + 1));
             } else {
                 foldPage = getPageMesh(mCurrentPageIndex - 1);
-                flatPage = getPageMesh(mCurrentPageIndex);
+                mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
-            flatPage.flat();
+
+            mFlatPage.draw(mViewMatrix, mProjectionMatrix);
             foldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            flatPage.draw(mViewMatrix, mProjectionMatrix);
             foldPage.draw(mViewMatrix, mProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
@@ -214,8 +221,18 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         return pageMesh;
     }
 
+    private int getPageTextureId(int pageIndex) {
+        int textureId = TextureManager.getInstance().getTexture(pageIndex);
+        if (textureId == 0) {
+            textureId = TextureManager.getInstance()
+                    .updateTexture(pageIndex, mPageProvider.updatePage(pageIndex, mWidth, mHeight).getCurrentPageBitmap());
+        }
+        return textureId;
+    }
+
     public void setPageProvider(FlipOver.PageProvider pageProvider) {
         mPageProvider = pageProvider;
+        TextureManager.getInstance().create(mPageProvider.getPageCount());
     }
 
     public void setCurrentPageIndex(int currentPageIndex) {
