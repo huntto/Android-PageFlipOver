@@ -13,11 +13,11 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private String mVertexShaderSource;
     private String mFragmentShaderSource;
 
-    private final String U_MATRIX = "uMatrix";
-    private final String U_PAGE_SIZE = "uPageSize";
-    private final String U_TEXTURE_UNIT = "uTextureUnit";
+    private static final String U_MATRIX = "uMatrix";
+    private static final String U_PAGE_SIZE = "uPageSize";
+    private static final String U_TEXTURE_UNIT = "uTextureUnit";
 
-    private final String A_POSITION = "aPosition";
+    private static final String A_POSITION = "aPosition";
 
     private int mMatrixLocation;
     private int mPageSizeLocation;
@@ -44,6 +44,7 @@ public class FlatPageShaderProgram extends ShaderProgram {
     @Override
     public void compile() {
         super.compile();
+        this.use();
         mMatrixLocation = glGetUniformLocation(mProgram, U_MATRIX);
         mPageSizeLocation = glGetUniformLocation(mProgram, U_PAGE_SIZE);
         mTextureUnitLocation = glGetUniformLocation(mProgram, U_TEXTURE_UNIT);

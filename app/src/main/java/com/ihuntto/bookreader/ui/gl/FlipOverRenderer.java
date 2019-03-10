@@ -3,15 +3,14 @@ package com.ihuntto.bookreader.ui.gl;
 import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.support.annotation.NonNull;
 import android.util.Log;
-import android.util.SparseArray;
 
 import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
-import com.ihuntto.bookreader.ui.gl.shape.Page;
+import com.ihuntto.bookreader.ui.gl.shape.FoldPage;
 import com.ihuntto.bookreader.ui.gl.util.TextureManager;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -56,9 +55,10 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     private float[] mViewMatrix = new float[16];
     private float[] mProjectionMatrix = new float[16];
 
-    private SparseArray<PageMesh> mPageMeshes;
     private Context mContext;
-    private Page mFlatPage;
+    private FlatPage mFlatPage;
+    private FoldPage mFoldPage;
+    private int mConstraintX;
 
     private static class Color {
         final float r;
@@ -89,14 +89,12 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
-        mPageMeshes = new SparseArray<>();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
-        PageMesh.initProgram(mContext);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -114,11 +112,19 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         perspectiveM(mProjectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
         setLookAtM(mViewMatrix, 0, 0f, 0f, -1.5f, 0f, 0f, 0f, 0f, 1f, 0f);
 
-        PageMesh.updateMesh(width, height);
-
+        int flatHeight = 0;
+        int baseFoldHeight = 1;
+        int maxFoldHeight = (int) (width / 5.0f + baseFoldHeight);
+        ;
         FlatPageShaderProgram flatPageShaderProgram = new FlatPageShaderProgram(mContext);
         flatPageShaderProgram.compile();
-        mFlatPage = new FlatPage(flatPageShaderProgram, width, height, (int) PageMesh.sMaxFoldHeight);
+        mFlatPage = new FlatPage(flatPageShaderProgram, width, height, flatHeight, maxFoldHeight);
+
+        FoldPageShaderProgram foldPageShaderProgram = new FoldPageShaderProgram(mContext);
+        foldPageShaderProgram.compile();
+        mFoldPage = new FoldPage(foldPageShaderProgram, width, height, baseFoldHeight, maxFoldHeight);
+
+        mConstraintX = maxFoldHeight;
     }
 
     private void update() {
@@ -166,8 +172,8 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             // 求得上下边的交点
             float crossUpX = (y0 * dragVec.y + x0 * dragVec.x) / dragVec.x;
             float crossDownX = ((y0 - mHeight) * dragVec.y + x0 * dragVec.x) / dragVec.x;
-            if ((crossUpX >= PageMesh.sMaxFoldHeight && crossDownX >= PageMesh.sMaxFoldHeight)
-                    || (crossUpX < PageMesh.sMaxFoldHeight && crossDownX < PageMesh.sMaxFoldHeight)
+            if ((crossUpX >= mConstraintX && crossDownX >= mConstraintX)
+                    || (crossUpX < mConstraintX && crossDownX < mConstraintX)
                     || Math.abs(crossDownX - crossUpX) < mWidth / 4.0f) {
                 mCurrentX = nextX;
                 mCurrentY = nextY;
@@ -192,33 +198,21 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             mFlatPage.draw(mViewMatrix, mProjectionMatrix);
         } else {
-            PageMesh foldPage;
             if (mFlipState == STATE_FLIP_TO_LEFT) {
-                foldPage = getPageMesh(mCurrentPageIndex);
+                mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex));
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex + 1));
             } else {
-                foldPage = getPageMesh(mCurrentPageIndex - 1);
+                mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex - 1));
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
 
             mFlatPage.draw(mViewMatrix, mProjectionMatrix);
-            foldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            foldPage.draw(mViewMatrix, mProjectionMatrix);
+            mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
+            mFoldPage.draw(mViewMatrix, mProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();
         }
-    }
-
-    @NonNull
-    private PageMesh getPageMesh(int pageIndex) {
-        PageMesh pageMesh = mPageMeshes.get(pageIndex);
-        if (pageMesh == null) {
-            pageMesh = new PageMesh();
-            pageMesh.updateTexture(mPageProvider.updatePage(pageIndex, mWidth, mHeight).getCurrentPageBitmap());
-            mPageMeshes.put(pageIndex, pageMesh);
-        }
-        return pageMesh;
     }
 
     private int getPageTextureId(int pageIndex) {

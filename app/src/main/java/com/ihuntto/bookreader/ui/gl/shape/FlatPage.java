@@ -35,7 +35,7 @@ public class FlatPage extends Page {
     private final float[] mTemp = new float[16];
 
 
-    public FlatPage(FlatPageShaderProgram program, int width, int height, int maxFoldHeight) {
+    public FlatPage(FlatPageShaderProgram program, int width, int height, int flatHeight, int maxFoldHeight) {
         super(width, height, maxFoldHeight);
 
         mProgram = program;
@@ -43,10 +43,10 @@ public class FlatPage extends Page {
         mHeight = height;
 
         final float[] vertices = {
-                0, mHeight, 0,        // left bottom
-                0, 0, 0,              // left top
-                mWidth, mHeight, 0,   // right bottom
-                mWidth, 0, 0          // right top
+                0, mHeight, flatHeight,        // left bottom
+                0, 0, flatHeight,              // left top
+                mWidth, mHeight, flatHeight,   // right bottom
+                mWidth, 0, flatHeight          // right top
         };
 
 
