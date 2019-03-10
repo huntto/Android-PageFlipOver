@@ -24,7 +24,10 @@ varying vec2 vTextureCoordinates;
 varying vec4 vBlendColor;
 varying float vIsMix;
 
+varying vec2 vPosition;
+
 void main() {
+    vPosition = aPosition;
     vTextureCoordinates = vec2(aPosition.x / uPageSize.x, aPosition.y / uPageSize.y);
     vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
     vBlendColor = vec4(1.0);
@@ -84,17 +87,5 @@ void main() {
         vBlendColor = vec4(vec3(simpleLight), 1.0);
     }
 
-    // 模拟阴影
-    if (!needFold) {
-        // 计算对称点
-        vec2 symmetric = aPosition - (dist * 2.0) * normalizedDragVec;
-        float offset = uPageSize.x * 0.015;
-        if (symmetric.x < uPageSize.x + offset && symmetric.y < uPageSize.y + offset && symmetric.y > -offset) {
-            if (simpleLight > 0.8) {
-                simpleLight = 0.8;
-            }
-            vBlendColor = vec4(vec3(simpleLight), 1.0);
-        }
-    }
     gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
 }
