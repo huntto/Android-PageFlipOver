@@ -9,6 +9,7 @@ import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowShaderProgram;
 import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
 import com.ihuntto.bookreader.ui.gl.shape.FoldPage;
 import com.ihuntto.bookreader.ui.gl.util.TextureManager;
@@ -22,7 +23,10 @@ import static android.opengl.GLES20.GL_DEPTH_TEST;
 import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_SRC_ALPHA;
 import static android.opengl.GLES20.glBlendFunc;
+import static android.opengl.GLES20.glDeleteFramebuffers;
 import static android.opengl.GLES20.glEnable;
+import static android.opengl.GLES20.glGenFramebuffers;
+import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.Matrix.perspectiveM;
 import static android.opengl.Matrix.setLookAtM;
 
@@ -59,6 +63,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     private FlatPage mFlatPage;
     private FoldPage mFoldPage;
     private int mConstraintX;
+    private FoldPageShadowShaderProgram mFoldPageShadowShaderProgram;
 
     private static class Color {
         final float r;
@@ -86,6 +91,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -94,6 +100,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
         mWidth = width;
         mHeight = height;
@@ -107,7 +114,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         int flatHeight = 0;
         int baseFoldHeight = 1;
         int maxFoldHeight = (int) (width / 5.0f + baseFoldHeight);
-        ;
+
         FlatPageShaderProgram flatPageShaderProgram = new FlatPageShaderProgram(mContext);
         flatPageShaderProgram.compile();
         mFlatPage = new FlatPage(flatPageShaderProgram, width, height, flatHeight, maxFoldHeight);
@@ -116,7 +123,12 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         foldPageShaderProgram.compile();
         mFoldPage = new FoldPage(foldPageShaderProgram, width, height, baseFoldHeight, maxFoldHeight);
 
+        mFoldPageShadowShaderProgram = new FoldPageShadowShaderProgram(mContext);
+        mFoldPageShadowShaderProgram.compile();
+
         mConstraintX = maxFoldHeight;
+
+        initShadowFramebuffer(width, height);
     }
 
     private void update() {
@@ -182,12 +194,14 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
 
         update();
 
         if (!isFlipping()) {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+            GLES20.glViewport(0, 0, mWidth, mHeight);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
             mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
         } else {
@@ -198,10 +212,24 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex - 1));
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
+//
+//            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+//            mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
+//            mFoldPage.drawShadow(mFoldPageShadowShaderProgram, mEyePos, mViewMatrix, mProjectionMatrix);
 
-            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mShadowFramebufferId);
+            GLES20.glViewport(0, 0, mWidth, mHeight);
+            GLES20.glClear( GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            mFoldPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+            mFoldPage.drawShadow(mFoldPageShadowShaderProgram, mEyePos, mViewMatrix, mProjectionMatrix);
+
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+            GLES20.glViewport(0, 0, mWidth, mHeight);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
+            mFlatPage.setTexture(mShadowTextureId);
+            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();
@@ -276,5 +304,80 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     public boolean isFlipping() {
         return mFlipState != STATE_FLIP_NONE;
+    }
+
+    int mShadowFramebufferId;
+    int mShadowTextureId;
+    int mShadowRenderDepthBufferId;
+
+
+    public void initShadowFramebuffer(int width, int height) {
+        int[] framebufferIds = new int[1];
+        glGenFramebuffers(1, framebufferIds, 0);
+        if (framebufferIds[0] == 0) {
+            if (D) {
+                Log.w(TAG, "Cloud not generate a new OpenGL framebuffer object.");
+            }
+            return;
+        }
+        mShadowFramebufferId = framebufferIds[0];
+
+        int[] renderBufferIds = new int[1];
+        GLES20.glGenRenderbuffers(1, renderBufferIds, 0);
+        if (renderBufferIds[0] == 0) {
+            if (D) {
+                Log.w(TAG, "Cloud not generate a new OpenGL render buffer object.");
+            }
+            glDeleteFramebuffers(1, framebufferIds, 0);
+            mShadowFramebufferId = 0;
+            return;
+        }
+        mShadowRenderDepthBufferId =renderBufferIds[0];
+
+        int[] textureIds = new int[1];
+        glGenTextures(1, textureIds, 0);
+        if (framebufferIds[0] == 0) {
+            if (D) {
+                Log.w(TAG, "Cloud not generate a new OpenGL texture object.");
+            }
+            glDeleteFramebuffers(1, framebufferIds, 0);
+            glDeleteFramebuffers(1, renderBufferIds, 0);
+            mShadowFramebufferId = 0;
+            mShadowRenderDepthBufferId = 0;
+            return;
+        }
+        mShadowTextureId = textureIds[0];
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mShadowTextureId);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
+        GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, mShadowRenderDepthBufferId);
+        GLES20.glRenderbufferStorage(GLES20.GL_RENDERBUFFER, GLES20.GL_DEPTH_COMPONENT16, width, height);
+
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mShadowFramebufferId);
+        GLES20.glFramebufferTexture2D(
+                GLES20.GL_FRAMEBUFFER,
+                GLES20.GL_COLOR_ATTACHMENT0,
+                GLES20.GL_TEXTURE_2D,
+                mShadowTextureId,
+                0);
+
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,
+                        0,
+                        GLES20.GL_RGB,
+                        width,
+                        height,
+                        0,
+                        GLES20.GL_RGB,
+                        GLES20.GL_UNSIGNED_SHORT_5_6_5,
+                        null);
+
+        GLES20.glFramebufferRenderbuffer(
+                        GLES20.GL_FRAMEBUFFER,
+                        GLES20.GL_DEPTH_ATTACHMENT,
+                        GLES20.GL_RENDERBUFFER,
+                        mShadowRenderDepthBufferId);
     }
 }
