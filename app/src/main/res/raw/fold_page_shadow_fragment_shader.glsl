@@ -1,10 +1,10 @@
 precision mediump float;
 
 varying vec4 vPosition;
-uniform highp vec3 uLightLocation;
+uniform highp vec3 uLightPos;
 
 void main() {
-    float dist = distance(vPosition.xyz,uLightLocation);
+    float dist = distance(vPosition.xyz, uLightPos);
 
     // 整数部分
     float intPart = floor(dist);

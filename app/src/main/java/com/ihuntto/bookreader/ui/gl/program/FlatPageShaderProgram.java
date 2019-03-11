@@ -14,8 +14,10 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private String mFragmentShaderSource;
 
     private static final String U_MATRIX = "uMatrix";
+    private static final String U_LIGHT_MVP_MATRIX = "uLightMVPMatrix";
     private static final String U_PAGE_SIZE = "uPageSize";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
+    private static final String U_SHADOW_TEXTURE_UNIT = "uShadowTextureUnit";
     // light
     private static final String U_LIGHT_DIRECTION = "uLight.direction";
     private static final String U_LIGHT_AMBIENT = "uLight.ambient";
@@ -23,13 +25,17 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private static final String U_LIGHT_SPECULAR = "uLight.specular";
     private static final String U_LIGHT_COLOR = "uLight.color";
     private static final String U_VIEW_POS = "uViewPos";
+    private static final String U_LIGHT_POS = "uLightPos";
+    private static final String U_DRAW_SHADOW = "uDrawShadow";
 
 
     private static final String A_POSITION = "aPosition";
 
     private int mMatrixLocation;
+    private int mLightMVPMatrixLocation;
     private int mPageSizeLocation;
     private int mTextureUnitLocation;
+    private int mShadowTextureUnitLocation;
     private int mPositionLocation;
 
     private int mLightDirectionLocation;
@@ -38,6 +44,8 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private int mLightSpecularLocation;
     private int mLightColorLocation;
     private int mViewPosLocation;
+    private int mLightPosLocation;
+    private int mDrawShadowLocation;
 
     public FlatPageShaderProgram(Context context) {
         mVertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.flat_page_vertex_shader);
@@ -61,8 +69,10 @@ public class FlatPageShaderProgram extends ShaderProgram {
         super.compile();
         this.use();
         mMatrixLocation = glGetUniformLocation(mProgram, U_MATRIX);
+        mLightMVPMatrixLocation = glGetUniformLocation(mProgram, U_LIGHT_MVP_MATRIX);
         mPageSizeLocation = glGetUniformLocation(mProgram, U_PAGE_SIZE);
         mTextureUnitLocation = glGetUniformLocation(mProgram, U_TEXTURE_UNIT);
+        mShadowTextureUnitLocation = glGetUniformLocation(mProgram, U_SHADOW_TEXTURE_UNIT);
         mPositionLocation = glGetAttribLocation(mProgram, A_POSITION);
         mLightDirectionLocation = glGetUniformLocation(mProgram, U_LIGHT_DIRECTION);
         mLightAmbientLocation = glGetUniformLocation(mProgram, U_LIGHT_AMBIENT);
@@ -70,6 +80,8 @@ public class FlatPageShaderProgram extends ShaderProgram {
         mLightSpecularLocation = glGetUniformLocation(mProgram, U_LIGHT_SPECULAR);
         mLightColorLocation = glGetUniformLocation(mProgram, U_LIGHT_COLOR);
         mViewPosLocation = glGetUniformLocation(mProgram, U_VIEW_POS);
+        mLightPosLocation = glGetUniformLocation(mProgram, U_LIGHT_POS);
+        mDrawShadowLocation = glGetUniformLocation(mProgram, U_DRAW_SHADOW);
     }
 
     public int getMatrixLocation() {
@@ -110,5 +122,21 @@ public class FlatPageShaderProgram extends ShaderProgram {
 
     public int getViewPosLocation() {
         return mViewPosLocation;
+    }
+
+    public int getShadowTextureUnitLocation() {
+        return mShadowTextureUnitLocation;
+    }
+
+    public int getLightMVPMatrixLocation() {
+        return mLightMVPMatrixLocation;
+    }
+
+    public int getLightPosLocation() {
+        return mLightPosLocation;
+    }
+
+    public int getDrawShadowLocation() {
+        return mDrawShadowLocation;
     }
 }

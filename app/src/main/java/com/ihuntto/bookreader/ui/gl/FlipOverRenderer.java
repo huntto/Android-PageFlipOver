@@ -27,6 +27,8 @@ import static android.opengl.GLES20.glDeleteFramebuffers;
 import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
+import static android.opengl.Matrix.multiplyMM;
+import static android.opengl.Matrix.orthoM;
 import static android.opengl.Matrix.perspectiveM;
 import static android.opengl.Matrix.setLookAtM;
 
@@ -56,8 +58,8 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     private float mCurrentX;
     private float mCurrentY;
 
-    private float[] mViewMatrix = new float[16];
-    private float[] mProjectionMatrix = new float[16];
+    private float[] mEyeViewProjectionMatrix = new float[16];
+    private float[] mLightViewProjectionMatrix = new float[16];
 
     private Context mContext;
     private FlatPage mFlatPage;
@@ -81,12 +83,14 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     private Color mBackgroundColor;
     private float[] mEyePos;
+    private float[] mLightPos;
 
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
         mEyePos = new float[]{0f, 0f, -1.5f};
+        mLightPos = new float[]{0f, 0f, -1.2f};
     }
 
     @Override
@@ -107,9 +111,16 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mMaxTargetX = width + 1;
         mMinTargetX = -width - 1;
 
+        float[] viewMatrix = new float[16];
+        float[] projectionMatrix = new float[16];
         GLES20.glViewport(0, 0, width, height);
-        perspectiveM(mProjectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
-        setLookAtM(mViewMatrix, 0, mEyePos[0], mEyePos[1], mEyePos[2], 0f, 0f, 0f, 0f, 1f, 0f);
+        perspectiveM(projectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
+        setLookAtM(viewMatrix, 0, mEyePos[0], mEyePos[1], mEyePos[2], 0f, 0f, 0f, 0f, 1f, 0f);
+        multiplyMM(mEyeViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+
+        perspectiveM(projectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
+        setLookAtM(viewMatrix, 0, mLightPos[0], mLightPos[1], mLightPos[2], 0f, 0f, 0f, 0f, 1f, 0f);
+        multiplyMM(mLightViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
         int flatHeight = 0;
         int baseFoldHeight = 1;
@@ -203,7 +214,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
             mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
-            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+            mFlatPage.draw(mEyePos, mEyeViewProjectionMatrix);
         } else {
             if (mFlipState == STATE_FLIP_TO_LEFT) {
                 mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex));
@@ -212,24 +223,20 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex - 1));
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
-//
-//            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
-//            mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-//            mFoldPage.drawShadow(mFoldPageShadowShaderProgram, mEyePos, mViewMatrix, mProjectionMatrix);
-
+            mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
 
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mShadowFramebufferId);
             GLES20.glViewport(0, 0, mWidth, mHeight);
-            GLES20.glClear( GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
-            mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            mFoldPage.drawShadow(mFoldPageShadowShaderProgram, mEyePos, mViewMatrix, mProjectionMatrix);
+            GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
+            mFoldPage.drawShadow(mFoldPageShadowShaderProgram, mLightPos, mLightViewProjectionMatrix);
 
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
             GLES20.glViewport(0, 0, mWidth, mHeight);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             GLES20.glClearColor(mBackgroundColor.r, mBackgroundColor.g, mBackgroundColor.b, mBackgroundColor.a);
-            mFlatPage.setTexture(mShadowTextureId);
-            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+            mFlatPage.drawWithShadow(mEyePos, mEyeViewProjectionMatrix, mLightPos, mLightViewProjectionMatrix, mShadowTextureId);
+//            mFlatPage.draw(mEyePos, mEyeViewProjectionMatrix);
+            mFoldPage.draw(mEyePos, mEyeViewProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();
@@ -306,9 +313,9 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         return mFlipState != STATE_FLIP_NONE;
     }
 
-    int mShadowFramebufferId;
-    int mShadowTextureId;
-    int mShadowRenderDepthBufferId;
+    private int mShadowFramebufferId;
+    private int mShadowTextureId;
+    private int mShadowRenderDepthBufferId;
 
 
     public void initShadowFramebuffer(int width, int height) {
@@ -332,7 +339,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             mShadowFramebufferId = 0;
             return;
         }
-        mShadowRenderDepthBufferId =renderBufferIds[0];
+        mShadowRenderDepthBufferId = renderBufferIds[0];
 
         int[] textureIds = new int[1];
         glGenTextures(1, textureIds, 0);
@@ -365,19 +372,19 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 0);
 
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,
-                        0,
-                        GLES20.GL_RGB,
-                        width,
-                        height,
-                        0,
-                        GLES20.GL_RGB,
-                        GLES20.GL_UNSIGNED_SHORT_5_6_5,
-                        null);
+                0,
+                GLES20.GL_RGB,
+                width,
+                height,
+                0,
+                GLES20.GL_RGB,
+                GLES20.GL_UNSIGNED_SHORT_5_6_5,
+                null);
 
         GLES20.glFramebufferRenderbuffer(
-                        GLES20.GL_FRAMEBUFFER,
-                        GLES20.GL_DEPTH_ATTACHMENT,
-                        GLES20.GL_RENDERBUFFER,
-                        mShadowRenderDepthBufferId);
+                GLES20.GL_FRAMEBUFFER,
+                GLES20.GL_DEPTH_ATTACHMENT,
+                GLES20.GL_RENDERBUFFER,
+                mShadowRenderDepthBufferId);
     }
 }

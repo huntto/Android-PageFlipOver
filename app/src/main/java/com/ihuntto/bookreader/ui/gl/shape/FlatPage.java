@@ -8,12 +8,14 @@ import java.nio.FloatBuffer;
 
 import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE1;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
+import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2f;
 import static android.opengl.GLES20.glUniform3fv;
@@ -61,18 +63,26 @@ public class FlatPage extends Page {
 
 
     @SuppressWarnings("SuspiciousNameCombination")
-    @Override
-    public void draw(final float[] eyePos, float[] viewMatrix, float[] projectionMatrix) {
+    public void drawWithShadow(final float[] eyePos, float[] eyeViewProjectionMatrix, float[] lightPos, float[] lightViewProjectionMatrix, int shadowTextureId) {
         mProgram.use();
 
-        multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
-        multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
+        multiplyMM(mMVPMatrix, 0, eyeViewProjectionMatrix, 0, mModelMatrix, 0);
         glUniformMatrix4fv(mProgram.getMatrixLocation(), 1, false, mMVPMatrix, 0);
+
+        if (lightViewProjectionMatrix != null) {
+            multiplyMM(mMVPMatrix, 0, lightViewProjectionMatrix, 0, mModelMatrix, 0);
+            glUniformMatrix4fv(mProgram.getLightMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
+        }
+
         glUniform3fv(mProgram.getLightDirectionLocation(), 1, mLightDirection, 0);
         glUniform3fv(mProgram.getLightAmbientLocation(), 1, mLightAmbient, 0);
         glUniform3fv(mProgram.getLightDiffuseLocation(), 1, mLightDiffuse, 0);
         glUniform3fv(mProgram.getLightSpecularLocation(), 1, mLightSpecular, 0);
         glUniform3fv(mProgram.getLightColorLocation(), 1, mLightColor, 0);
+        if (lightPos != null) {
+            glUniform3fv(mProgram.getLightPosLocation(), 1, lightPos, 0);
+        }
+        glUniform1f(mProgram.getDrawShadowLocation(), shadowTextureId == 0 ? 0.0f : 1.0f);
 
         invertM(mTemp, 0, mMVPMatrix, 0);
         transposeM(mTemp, 16, mTemp, 0);
@@ -94,6 +104,18 @@ public class FlatPage extends Page {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mTextureId);
         glUniform1i(mProgram.getTextureUnitLocation(), 0);
+
+        if (shadowTextureId != 0) {
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, shadowTextureId);
+            glUniform1i(mProgram.getShadowTextureUnitLocation(), 1);
+        }
+
         glDrawArrays(GL_TRIANGLE_STRIP, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
+    }
+
+    @Override
+    public void draw(float[] eyePos, float[] viewProjectionMatrix) {
+        drawWithShadow(eyePos, viewProjectionMatrix, null, null, 0);
     }
 }

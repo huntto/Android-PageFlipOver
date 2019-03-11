@@ -23,9 +23,14 @@ struct Light {
 uniform Light uLight;
 uniform vec3 uViewPos;
 
+varying vec4 vPosition;
+varying vec4 vOriginPosition;
+
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uPageSize.x, aPosition.y / uPageSize.y);
-    gl_Position = uMatrix * vec4(aPosition, 1.0);
+    vOriginPosition = vec4(aPosition, 1.0);
+    vPosition = uMatrix * vec4(aPosition, 1.0);
+    gl_Position = vPosition;
 
     vec3 normal = normalize(vec3(0.0, 0.0, 1.0));
     // 环境光

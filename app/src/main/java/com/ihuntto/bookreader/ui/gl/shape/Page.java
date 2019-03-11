@@ -17,6 +17,8 @@ public abstract class Page {
 
     protected float[] mLightColor = new float[]{1.0f, 1.0f, 1.0f};
 
+    protected int mShadowTextureId;
+
     public Page(int width, int height, int maxFoldHeight) {
         final float[] translateMatrix = new float[16];
         final float[] scaleMatrix = new float[16];
@@ -52,5 +54,9 @@ public abstract class Page {
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
-    public abstract void draw(final float[] eyePos, float[] viewMatrix, float[] projectionMatrix);
+    public abstract void draw(final float[] eyePos, float[] viewProjectionMatrix);
+
+    public void setShadowTexture(int shadowTextureId) {
+        mShadowTextureId = shadowTextureId;
+    }
 }

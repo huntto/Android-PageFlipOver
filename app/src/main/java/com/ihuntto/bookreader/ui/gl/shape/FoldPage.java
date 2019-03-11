@@ -98,11 +98,10 @@ public class FoldPage extends Page {
 
     @SuppressWarnings("SuspiciousNameCombination")
     @Override
-    public void draw(final float[] eyePos, float[] viewMatrix, float[] projectionMatrix) {
+    public void draw(final float[] eyePos, float[] viewProjectionMatrix) {
         mProgram.use();
 
-        multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
-        multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
+        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
         glUniformMatrix4fv(mProgram.getMatrixLocation(), 1, false, mMVPMatrix, 0);
 
         glUniform2f(mProgram.getPageSizeLocation(), mWidth, mHeight);
@@ -137,11 +136,10 @@ public class FoldPage extends Page {
         glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }
 
-    public void drawShadow(FoldPageShadowShaderProgram shadowProgram, final float[] eyePos, float[] viewMatrix, float[] projectionMatrix) {
+    public void drawShadow(FoldPageShadowShaderProgram shadowProgram, final float[] lightPos, float[] viewProjectionMatrix) {
         shadowProgram.use();
 
-        multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
-        multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
+        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
         glUniformMatrix4fv(shadowProgram.getMatrixLocation(), 1, false, mMVPMatrix, 0);
 
         glUniform2f(shadowProgram.getPageSizeLocation(), mWidth, mHeight);
@@ -149,7 +147,7 @@ public class FoldPage extends Page {
         glUniform2f(shadowProgram.getOriginLocation(), mOriginPoint.x, mOriginPoint.y);
         glUniform1f(shadowProgram.getMaxFoldHeightLocation(), mMaxFoldHeight);
         glUniform1f(shadowProgram.getBaseFoldHeightLocation(), mBaseFoldHeight);
-        glUniform3fv(shadowProgram.getLightPosLocation(), 1, eyePos, 0);
+        glUniform3fv(shadowProgram.getLightPosLocation(), 1, lightPos, 0);
 
         mVertexData.position(0);
         glVertexAttribPointer(shadowProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
