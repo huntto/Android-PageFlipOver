@@ -16,6 +16,7 @@ import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2f;
+import static android.opengl.GLES20.glUniform3f;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.Matrix.multiplyMM;
@@ -65,6 +66,12 @@ public class FlatPage extends Page {
         multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
         multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
         glUniformMatrix4fv(mProgram.getMatrixLocation(), 1, false, mMVPMatrix, 0);
+        glUniform3f(mProgram.getLightDirectionLocation(), mLightDirection.x, mLightDirection.y, mLightDirection.z);
+        glUniform3f(mProgram.getLightAmbientLocation(), mLightAmbient.x, mLightAmbient.y, mLightAmbient.z);
+        glUniform3f(mProgram.getLightDiffuseLocation(), mLightDiffuse.x, mLightDiffuse.y, mLightDiffuse.z);
+        glUniform3f(mProgram.getLightSpecularLocation(), mLightSpecular.x, mLightSpecular.y, mLightSpecular.z);
+        glUniform3f(mProgram.getLightColorLocation(), mLightColor.x, mLightColor.y, mLightColor.z);
+
 
         glUniform2f(mProgram.getPageSizeLocation(), mWidth, mHeight);
 

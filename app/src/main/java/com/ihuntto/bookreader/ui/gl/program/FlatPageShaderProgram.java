@@ -16,6 +16,13 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private static final String U_MATRIX = "uMatrix";
     private static final String U_PAGE_SIZE = "uPageSize";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
+    // light
+    private static final String U_LIGHT_DIRECTION = "uLight.direction";
+    private static final String U_LIGHT_AMBIENT = "uLight.ambient";
+    private static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
+    private static final String U_LIGHT_SPECULAR = "uLight.specular";
+    private static final String U_LIGHT_COLOR = "uLight.color";
+
 
     private static final String A_POSITION = "aPosition";
 
@@ -23,6 +30,12 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private int mPageSizeLocation;
     private int mTextureUnitLocation;
     private int mPositionLocation;
+
+    private int mLightDirectionLocation;
+    private int mLightAmbientLocation;
+    private int mLightDiffuseLocation;
+    private int mLightSpecularLocation;
+    private int mLightColorLocation;
 
     public FlatPageShaderProgram(Context context) {
         mVertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.flat_page_vertex_shader);
@@ -49,6 +62,11 @@ public class FlatPageShaderProgram extends ShaderProgram {
         mPageSizeLocation = glGetUniformLocation(mProgram, U_PAGE_SIZE);
         mTextureUnitLocation = glGetUniformLocation(mProgram, U_TEXTURE_UNIT);
         mPositionLocation = glGetAttribLocation(mProgram, A_POSITION);
+        mLightDirectionLocation = glGetUniformLocation(mProgram, U_LIGHT_DIRECTION);
+        mLightAmbientLocation = glGetUniformLocation(mProgram, U_LIGHT_AMBIENT);
+        mLightDiffuseLocation = glGetUniformLocation(mProgram, U_LIGHT_DIFFUSE);
+        mLightSpecularLocation = glGetUniformLocation(mProgram, U_LIGHT_SPECULAR);
+        mLightColorLocation = glGetUniformLocation(mProgram, U_LIGHT_COLOR);
     }
 
     public int getMatrixLocation() {
@@ -65,5 +83,25 @@ public class FlatPageShaderProgram extends ShaderProgram {
 
     public int getPositionLocation() {
         return mPositionLocation;
+    }
+
+    public int getLightDirectionLocation() {
+        return mLightDirectionLocation;
+    }
+
+    public int getLightAmbientLocation() {
+        return mLightAmbientLocation;
+    }
+
+    public int getLightDiffuseLocation() {
+        return mLightDiffuseLocation;
+    }
+
+    public int getLightSpecularLocation() {
+        return mLightSpecularLocation;
+    }
+
+    public int getLightColorLocation() {
+        return mLightColorLocation;
     }
 }

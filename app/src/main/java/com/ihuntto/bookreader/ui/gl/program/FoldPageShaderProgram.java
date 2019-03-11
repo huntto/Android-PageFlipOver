@@ -2,6 +2,7 @@ package com.ihuntto.bookreader.ui.gl.program;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.ihuntto.bookreader.R;
 import com.ihuntto.bookreader.ui.gl.util.TextResourceReader;
@@ -20,6 +21,12 @@ public class FoldPageShaderProgram extends ShaderProgram {
     private static final String U_PAGE_SIZE = "uPageSize";
     private static final String U_MAX_FOLD_HEIGHT = "uMaxFoldHeight";
     private static final String U_BASE_FOLD_HEIGHT = "uBaseFoldHeight";
+    // light
+    private static final String U_LIGHT_DIRECTION = "uLight.direction";
+    private static final String U_LIGHT_AMBIENT = "uLight.ambient";
+    private static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
+    private static final String U_LIGHT_SPECULAR = "uLight.specular";
+    private static final String U_LIGHT_COLOR = "uLight.color";
 
     private static final String A_POSITION = "aPosition";
 
@@ -32,6 +39,12 @@ public class FoldPageShaderProgram extends ShaderProgram {
     private int mPageSizeLocation;
     private int mMaxFoldHeightLocation;
     private int mBaseFoldHeightLocation;
+
+    private int mLightDirectionLocation;
+    private int mLightAmbientLocation;
+    private int mLightDiffuseLocation;
+    private int mLightSpecularLocation;
+    private int mLightColorLocation;
 
     private int mPositionLocation;
 
@@ -68,6 +81,12 @@ public class FoldPageShaderProgram extends ShaderProgram {
         mPageSizeLocation = glGetUniformLocation(mProgram, U_PAGE_SIZE);
         mMaxFoldHeightLocation = glGetUniformLocation(mProgram, U_MAX_FOLD_HEIGHT);
         mBaseFoldHeightLocation = glGetUniformLocation(mProgram, U_BASE_FOLD_HEIGHT);
+
+        mLightDirectionLocation = glGetUniformLocation(mProgram, U_LIGHT_DIRECTION);
+        mLightAmbientLocation = glGetUniformLocation(mProgram, U_LIGHT_AMBIENT);
+        mLightDiffuseLocation = glGetUniformLocation(mProgram, U_LIGHT_DIFFUSE);
+        mLightSpecularLocation = glGetUniformLocation(mProgram, U_LIGHT_SPECULAR);
+        mLightColorLocation = glGetUniformLocation(mProgram, U_LIGHT_COLOR);
 
         mPositionLocation = glGetAttribLocation(mProgram, A_POSITION);
     }
@@ -110,5 +129,25 @@ public class FoldPageShaderProgram extends ShaderProgram {
 
     public int getPositionLocation() {
         return mPositionLocation;
+    }
+
+    public int getLightDirectionLocation() {
+        return mLightDirectionLocation;
+    }
+
+    public int getLightAmbientLocation() {
+        return mLightAmbientLocation;
+    }
+
+    public int getLightDiffuseLocation() {
+        return mLightDiffuseLocation;
+    }
+
+    public int getLightSpecularLocation() {
+        return mLightSpecularLocation;
+    }
+
+    public int getLightColorLocation() {
+        return mLightColorLocation;
     }
 }

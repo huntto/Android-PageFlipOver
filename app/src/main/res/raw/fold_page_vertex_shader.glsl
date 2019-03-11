@@ -24,12 +24,25 @@ varying vec2 vTextureCoordinates;
 varying vec4 vBlendColor;
 varying float vIsMix;
 
+struct Light {
+    // 定向光
+    vec3 direction;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    vec3 color;
+};
+
+uniform Light uLight;
+
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uPageSize.x, aPosition.y / uPageSize.y);
     vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
     vBlendColor = vec4(1.0);
     vIsMix = 0.0;
 
+    vec3 normal = vec3(0.0, 0.0, 1.0);
     // 中点
     float x0 = (uDragPoint.x + uOriginPoint.x) / 2.0;
     float y0 = (uDragPoint.y + uOriginPoint.y) / 2.0;
@@ -72,29 +85,33 @@ void main() {
 
         float h = radius * cos(alpha);
         float height;
+
+        vec2 centerPoint = vec2(newPosition.xy) + (maxDist - dist) * normalizedDragVec;
         if (needFold) {
             height = h + radius;
+            normal = newPosition - vec3(centerPoint, radius + uBaseFoldHeight);
         } else {
             height = radius - h;
+            normal = -newPosition + vec3(centerPoint, radius + uBaseFoldHeight);
         }
         newPosition.z = height + uBaseFoldHeight;
-
-        // 模拟光照
-        simpleLight = (h + radius) / (uMaxFoldHeight - uBaseFoldHeight);
-        vBlendColor = vec4(vec3(simpleLight), 1.0);
     }
 
-    // 模拟阴影
-    if (!needFold) {
-        // 计算对称点
-        vec2 symmetric = aPosition - (dist * 2.0) * normalizedDragVec;
-        float offset = uPageSize.x * 0.015;
-        if (symmetric.x < uPageSize.x + offset && symmetric.y < uPageSize.y + offset && symmetric.y > -offset) {
-            if (simpleLight > 0.8) {
-                simpleLight = 0.8;
-            }
-            vBlendColor = vec4(vec3(simpleLight), 1.0);
-        }
-    }
+    normal = normalize(normal);
+    // 环境光
+    vec3 ambient = uLight.ambient * uLight.color;
+
+    // 漫反射
+    vec3 direction=normalize(uLight.direction);
+    float diff = max(dot(normal,-direction), 0.0);
+    vec3 diffuse =uLight.diffuse * diff * uLight.color;
+
+    // 镜面光
+    vec3 viewDir = normalize(vec3(0.0, 0.0, 200.0) - newPosition);
+    vec3 reflectDir = reflect(-direction, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = uLight.specular * spec * uLight.color;
+
+    vBlendColor = vec4(ambient + diffuse + specular, 1.0);
     gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
 }

@@ -19,6 +19,7 @@ import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2f;
+import static android.opengl.GLES20.glUniform3f;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
 
@@ -101,6 +102,11 @@ public class FoldPage extends Page {
         glUniform2f(mProgram.getOriginLocation(), mOriginPoint.x, mOriginPoint.y);
         glUniform1f(mProgram.getMaxFoldHeightLocation(), mMaxFoldHeight);
         glUniform1f(mProgram.getBaseFoldHeightLocation(), mBaseFoldHeight);
+        glUniform3f(mProgram.getLightDirectionLocation(), mLightDirection.x, mLightDirection.y, mLightDirection.z);
+        glUniform3f(mProgram.getLightAmbientLocation(), mLightAmbient.x, mLightAmbient.y, mLightAmbient.z);
+        glUniform3f(mProgram.getLightDiffuseLocation(), mLightDiffuse.x, mLightDiffuse.y, mLightDiffuse.z);
+        glUniform3f(mProgram.getLightSpecularLocation(), mLightSpecular.x, mLightSpecular.y, mLightSpecular.z);
+        glUniform3f(mProgram.getLightColorLocation(), mLightColor.x, mLightColor.y, mLightColor.z);
 
         mVertexData.position(0);
         glVertexAttribPointer(mProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
