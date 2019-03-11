@@ -21,6 +21,7 @@ struct Light {
 };
 
 uniform Light uLight;
+uniform vec3 uViewPos;
 
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uPageSize.x, aPosition.y / uPageSize.y);
@@ -36,7 +37,7 @@ void main() {
     vec3 diffuse =uLight.diffuse * diff * uLight.color;
 
     // 镜面光
-    vec3 viewDir = normalize(vec3(0.0, 0.0, 200.0) - aPosition);
+    vec3 viewDir = normalize(uViewPos - aPosition);
     vec3 reflectDir = reflect(-direction, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
     vec3 specular = uLight.specular * spec * uLight.color;

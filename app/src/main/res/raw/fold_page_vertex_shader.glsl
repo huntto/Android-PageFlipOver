@@ -3,9 +3,7 @@ precision mediump float;
 const float PI = 3.1415927;
 
 // MVP矩阵
-uniform mat4 uViewMatrix;
-uniform mat4 uProjectionMatrix;
-uniform mat4 uModelMatrix;
+uniform mat4 uMatrix;
 
 // 平展情况下，触摸页边的点
 uniform vec2 uOriginPoint;
@@ -35,6 +33,7 @@ struct Light {
 };
 
 uniform Light uLight;
+uniform vec3 uViewPos;
 
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uPageSize.x, aPosition.y / uPageSize.y);
@@ -107,11 +106,11 @@ void main() {
     vec3 diffuse =uLight.diffuse * diff * uLight.color;
 
     // 镜面光
-    vec3 viewDir = normalize(vec3(0.0, 0.0, 200.0) - newPosition);
+    vec3 viewDir = normalize(uViewPos - newPosition);
     vec3 reflectDir = reflect(-direction, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
     vec3 specular = uLight.specular * spec * uLight.color;
 
     vBlendColor = vec4(ambient + diffuse + specular, 1.0);
-    gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
+    gl_Position = uMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
 }

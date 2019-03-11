@@ -16,10 +16,13 @@ import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2f;
-import static android.opengl.GLES20.glUniform3f;
+import static android.opengl.GLES20.glUniform3fv;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
+import static android.opengl.Matrix.invertM;
 import static android.opengl.Matrix.multiplyMM;
+import static android.opengl.Matrix.multiplyMV;
+import static android.opengl.Matrix.transposeM;
 
 public class FlatPage extends Page {
     private static final int POSITION_COMPONENT_COUNT = 3;
@@ -33,8 +36,7 @@ public class FlatPage extends Page {
     private FlatPageShaderProgram mProgram;
 
     private final float[] mMVPMatrix = new float[16];
-    private final float[] mTemp = new float[16];
-
+    private final float[] mTemp = new float[32];
 
     public FlatPage(FlatPageShaderProgram program, int width, int height, int flatHeight, int maxFoldHeight) {
         super(width, height, maxFoldHeight);
@@ -60,17 +62,26 @@ public class FlatPage extends Page {
 
     @SuppressWarnings("SuspiciousNameCombination")
     @Override
-    public void draw(float[] viewMatrix, float[] projectionMatrix) {
+    public void draw(final float[] eyePos, float[] viewMatrix, float[] projectionMatrix) {
         mProgram.use();
 
         multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
         multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
         glUniformMatrix4fv(mProgram.getMatrixLocation(), 1, false, mMVPMatrix, 0);
-        glUniform3f(mProgram.getLightDirectionLocation(), mLightDirection.x, mLightDirection.y, mLightDirection.z);
-        glUniform3f(mProgram.getLightAmbientLocation(), mLightAmbient.x, mLightAmbient.y, mLightAmbient.z);
-        glUniform3f(mProgram.getLightDiffuseLocation(), mLightDiffuse.x, mLightDiffuse.y, mLightDiffuse.z);
-        glUniform3f(mProgram.getLightSpecularLocation(), mLightSpecular.x, mLightSpecular.y, mLightSpecular.z);
-        glUniform3f(mProgram.getLightColorLocation(), mLightColor.x, mLightColor.y, mLightColor.z);
+        glUniform3fv(mProgram.getLightDirectionLocation(), 1, mLightDirection, 0);
+        glUniform3fv(mProgram.getLightAmbientLocation(), 1, mLightAmbient, 0);
+        glUniform3fv(mProgram.getLightDiffuseLocation(), 1, mLightDiffuse, 0);
+        glUniform3fv(mProgram.getLightSpecularLocation(), 1, mLightSpecular, 0);
+        glUniform3fv(mProgram.getLightColorLocation(), 1, mLightColor, 0);
+
+        invertM(mTemp, 0, mMVPMatrix, 0);
+        transposeM(mTemp, 16, mTemp, 0);
+        mTemp[4] = eyePos[0];
+        mTemp[5] = eyePos[1];
+        mTemp[6] = eyePos[2];
+        mTemp[7] = 0;
+        multiplyMV(mTemp, 0, mTemp, 16, mTemp, 4);
+        glUniform3fv(mProgram.getViewPosLocation(), 1, mTemp, 0);
 
 
         glUniform2f(mProgram.getPageSizeLocation(), mWidth, mHeight);

@@ -9,29 +9,13 @@ public abstract class Page {
     protected int mTextureId;
     protected final float[] mModelMatrix = new float[16];
 
-    protected static class Vec3 {
-        final float x;
-        final float y;
-        final float z;
-
-        public Vec3(float x, float y, float z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        public Vec3(float v) {
-            this(v, v, v);
-        }
-    }
-
-    protected Vec3 mLightDirection = new Vec3(-1.0f, 0.0f, -8.0f);
-    protected Vec3 mLightAmbient = new Vec3(0.2f);
-    protected Vec3 mLightDiffuse = new Vec3(0.8f);
+    protected float[] mLightDirection = new float[]{-1.0f, 0.0f, -8.0f};
+    protected float[] mLightAmbient = new float[]{0.2f, 0.2f, 0.2f};
+    protected float[] mLightDiffuse = new float[]{0.8f, 0.8f, 0.8f};
     // 镜面光尽量小
-    protected Vec3 mLightSpecular = new Vec3(0.1f);
+    protected float[] mLightSpecular = new float[]{0.1f, 0.1f, 0.1f};
 
-    protected Vec3 mLightColor = new Vec3(1.0f);
+    protected float[] mLightColor = new float[]{1.0f, 1.0f, 1.0f};
 
     public Page(int width, int height, int maxFoldHeight) {
         final float[] translateMatrix = new float[16];
@@ -67,5 +51,6 @@ public abstract class Page {
         mTextureId = textureId;
     }
 
-    public abstract void draw(float[] viewMatrix, float[] projectionMatrix);
+    @SuppressWarnings("SuspiciousNameCombination")
+    public abstract void draw(final float[] eyePos, float[] viewMatrix, float[] projectionMatrix);
 }

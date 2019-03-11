@@ -22,6 +22,7 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
     private static final String U_LIGHT_SPECULAR = "uLight.specular";
     private static final String U_LIGHT_COLOR = "uLight.color";
+    private static final String U_VIEW_POS = "uViewPos";
 
 
     private static final String A_POSITION = "aPosition";
@@ -36,6 +37,7 @@ public class FlatPageShaderProgram extends ShaderProgram {
     private int mLightDiffuseLocation;
     private int mLightSpecularLocation;
     private int mLightColorLocation;
+    private int mViewPosLocation;
 
     public FlatPageShaderProgram(Context context) {
         mVertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.flat_page_vertex_shader);
@@ -67,6 +69,7 @@ public class FlatPageShaderProgram extends ShaderProgram {
         mLightDiffuseLocation = glGetUniformLocation(mProgram, U_LIGHT_DIFFUSE);
         mLightSpecularLocation = glGetUniformLocation(mProgram, U_LIGHT_SPECULAR);
         mLightColorLocation = glGetUniformLocation(mProgram, U_LIGHT_COLOR);
+        mViewPosLocation = glGetUniformLocation(mProgram, U_VIEW_POS);
     }
 
     public int getMatrixLocation() {
@@ -103,5 +106,9 @@ public class FlatPageShaderProgram extends ShaderProgram {
 
     public int getLightColorLocation() {
         return mLightColorLocation;
+    }
+
+    public int getViewPosLocation() {
+        return mViewPosLocation;
     }
 }

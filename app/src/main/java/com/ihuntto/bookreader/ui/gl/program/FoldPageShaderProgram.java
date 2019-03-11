@@ -12,9 +12,7 @@ import static android.opengl.GLES20.glGetUniformLocation;
 
 public class FoldPageShaderProgram extends ShaderProgram {
 
-    private static final String U_VIEW_MATRIX = "uViewMatrix";
-    private static final String U_MODEL_MATRIX = "uModelMatrix";
-    private static final String U_PROJECTION_MATRIX = "uProjectionMatrix";
+    private static final String U_MATRIX = "uMatrix";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
     private static final String U_ORIGIN_POINT = "uOriginPoint";
     private static final String U_DRAG_POINT = "uDragPoint";
@@ -27,12 +25,11 @@ public class FoldPageShaderProgram extends ShaderProgram {
     private static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
     private static final String U_LIGHT_SPECULAR = "uLight.specular";
     private static final String U_LIGHT_COLOR = "uLight.color";
+    private static final String U_VIEW_POS = "uViewPos";
 
     private static final String A_POSITION = "aPosition";
 
-    private int mViewMatrixLocation;
-    private int mModelMatrixLocation;
-    private int mProjectionMatrixLocation;
+    private int mMatrixLocation;
     private int mTextureUnitLocation;
     private int mOriginLocation;
     private int mDragLocation;
@@ -45,6 +42,7 @@ public class FoldPageShaderProgram extends ShaderProgram {
     private int mLightDiffuseLocation;
     private int mLightSpecularLocation;
     private int mLightColorLocation;
+    private int mViewPosLocation;
 
     private int mPositionLocation;
 
@@ -72,9 +70,7 @@ public class FoldPageShaderProgram extends ShaderProgram {
     public void compile() {
         super.compile();
         this.use();
-        mViewMatrixLocation = glGetUniformLocation(mProgram, U_VIEW_MATRIX);
-        mModelMatrixLocation = glGetUniformLocation(mProgram, U_MODEL_MATRIX);
-        mProjectionMatrixLocation = glGetUniformLocation(mProgram, U_PROJECTION_MATRIX);
+        mMatrixLocation = glGetUniformLocation(mProgram, U_MATRIX);
         mTextureUnitLocation = glGetUniformLocation(mProgram, U_TEXTURE_UNIT);
         mOriginLocation = glGetUniformLocation(mProgram, U_ORIGIN_POINT);
         mDragLocation = glGetUniformLocation(mProgram, U_DRAG_POINT);
@@ -87,20 +83,13 @@ public class FoldPageShaderProgram extends ShaderProgram {
         mLightDiffuseLocation = glGetUniformLocation(mProgram, U_LIGHT_DIFFUSE);
         mLightSpecularLocation = glGetUniformLocation(mProgram, U_LIGHT_SPECULAR);
         mLightColorLocation = glGetUniformLocation(mProgram, U_LIGHT_COLOR);
+        mViewPosLocation = glGetUniformLocation(mProgram, U_VIEW_POS);
 
         mPositionLocation = glGetAttribLocation(mProgram, A_POSITION);
     }
 
-    public int getViewMatrixLocation() {
-        return mViewMatrixLocation;
-    }
-
-    public int getModelMatrixLocation() {
-        return mModelMatrixLocation;
-    }
-
-    public int getProjectionMatrixLocation() {
-        return mProjectionMatrixLocation;
+    public int getMatrixLocation() {
+        return mMatrixLocation;
     }
 
     public int getTextureUnitLocation() {
@@ -149,5 +138,9 @@ public class FoldPageShaderProgram extends ShaderProgram {
 
     public int getLightColorLocation() {
         return mLightColorLocation;
+    }
+
+    public int getViewPosLocation() {
+        return mViewPosLocation;
     }
 }

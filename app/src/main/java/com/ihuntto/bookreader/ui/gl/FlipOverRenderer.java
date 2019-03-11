@@ -75,21 +75,13 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     }
 
     private Color mBackgroundColor;
-
-    private static class Vector {
-        final float x;
-        final float y;
-
-        public Vector(float x, float y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
+    private float[] mEyePos;
 
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
+        mEyePos = new float[]{0f, 0f, -1.5f};
     }
 
     @Override
@@ -110,7 +102,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
         GLES20.glViewport(0, 0, width, height);
         perspectiveM(mProjectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
-        setLookAtM(mViewMatrix, 0, 0f, 0f, -1.5f, 0f, 0f, 0f, 0f, 1f, 0f);
+        setLookAtM(mViewMatrix, 0, mEyePos[0], mEyePos[1], mEyePos[2], 0f, 0f, 0f, 0f, 1f, 0f);
 
         int flatHeight = 0;
         int baseFoldHeight = 1;
@@ -165,13 +157,14 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             float x0 = (mWidth + nextX) / 2.0f;
             float y0 = (mAnchorY + nextY) / 2.0f;
             // 拉拽方向
-            Vector dragVec = new Vector(nextX - mWidth, nextY - mAnchorY);
+            float dragVecX = nextX - mWidth;
+            float dragVecY = nextY - mAnchorY;
             // 中垂线方向 (x-x0, y-y0)
             // 中垂线方方向与拉拽方向垂直
             // (x-x0)*dragVec.x + (y-y0)*dragVec.y = 0
             // 求得上下边的交点
-            float crossUpX = (y0 * dragVec.y + x0 * dragVec.x) / dragVec.x;
-            float crossDownX = ((y0 - mHeight) * dragVec.y + x0 * dragVec.x) / dragVec.x;
+            float crossUpX = (y0 * dragVecY + x0 * dragVecX) / dragVecX;
+            float crossDownX = ((y0 - mHeight) * dragVecY + x0 * dragVecX) / dragVecX;
             if ((crossUpX >= mConstraintX && crossDownX >= mConstraintX)
                     || (crossUpX < mConstraintX && crossDownX < mConstraintX)
                     || Math.abs(crossDownX - crossUpX) < mWidth / 4.0f) {
@@ -196,7 +189,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
         if (!isFlipping()) {
             mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
-            mFlatPage.draw(mViewMatrix, mProjectionMatrix);
+            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
         } else {
             if (mFlipState == STATE_FLIP_TO_LEFT) {
                 mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex));
@@ -206,9 +199,9 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
 
-            mFlatPage.draw(mViewMatrix, mProjectionMatrix);
+            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            mFoldPage.draw(mViewMatrix, mProjectionMatrix);
+            mFoldPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();
