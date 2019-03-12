@@ -1,6 +1,6 @@
 precision mediump float;
 
-uniform mat4 uMatrix;
+uniform mat4 uMVPMatrix;
 
 // 页面尺寸
 uniform vec2 uPageSize;
@@ -25,7 +25,7 @@ uniform vec3 uViewPos;
 
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uPageSize.x, aPosition.y / uPageSize.y);
-    gl_Position = uMatrix * vec4(aPosition, 1.0);
+    gl_Position = uMVPMatrix * vec4(aPosition, 1.0);
 
     vec3 normal = normalize(vec3(0.0, 0.0, 1.0));
     // 环境光

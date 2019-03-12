@@ -2,7 +2,6 @@ package com.ihuntto.bookreader.ui.gl.program;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.ihuntto.bookreader.R;
 import com.ihuntto.bookreader.ui.gl.util.TextResourceReader;
@@ -12,7 +11,7 @@ import static android.opengl.GLES20.glGetUniformLocation;
 
 public class FoldPageShaderProgram extends ShaderProgram {
 
-    private static final String U_MATRIX = "uMatrix";
+    private static final String U_MVP_MATRIX = "uMVPMatrix";
     private static final String U_TEXTURE_UNIT = "uTextureUnit";
     private static final String U_ORIGIN_POINT = "uOriginPoint";
     private static final String U_DRAG_POINT = "uDragPoint";
@@ -29,7 +28,7 @@ public class FoldPageShaderProgram extends ShaderProgram {
 
     private static final String A_POSITION = "aPosition";
 
-    private int mMatrixLocation;
+    private int mMVPMatrixLocation;
     private int mTextureUnitLocation;
     private int mOriginLocation;
     private int mDragLocation;
@@ -70,7 +69,7 @@ public class FoldPageShaderProgram extends ShaderProgram {
     public void compile() {
         super.compile();
         this.use();
-        mMatrixLocation = glGetUniformLocation(mProgram, U_MATRIX);
+        mMVPMatrixLocation = glGetUniformLocation(mProgram, U_MVP_MATRIX);
         mTextureUnitLocation = glGetUniformLocation(mProgram, U_TEXTURE_UNIT);
         mOriginLocation = glGetUniformLocation(mProgram, U_ORIGIN_POINT);
         mDragLocation = glGetUniformLocation(mProgram, U_DRAG_POINT);
@@ -88,8 +87,8 @@ public class FoldPageShaderProgram extends ShaderProgram {
         mPositionLocation = glGetAttribLocation(mProgram, A_POSITION);
     }
 
-    public int getMatrixLocation() {
-        return mMatrixLocation;
+    public int getMVPMatrixLocation() {
+        return mMVPMatrixLocation;
     }
 
     public int getTextureUnitLocation() {

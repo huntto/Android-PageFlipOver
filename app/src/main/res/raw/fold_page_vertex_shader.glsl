@@ -3,7 +3,7 @@ precision mediump float;
 const float PI = 3.1415927;
 
 // MVP矩阵
-uniform mat4 uMatrix;
+uniform mat4 uMVPMatrix;
 
 // 平展情况下，触摸页边的点
 uniform vec2 uOriginPoint;
@@ -112,5 +112,5 @@ void main() {
     vec3 specular = uLight.specular * spec * uLight.color;
 
     vBlendColor = vec4(ambient + diffuse + specular, 1.0);
-    gl_Position = uMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
+    gl_Position = uMVPMatrix * vec4(newPosition.x, newPosition.y, newPosition.z, 1.0);
 }

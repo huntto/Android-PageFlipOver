@@ -62,12 +62,11 @@ public class FlatPage extends Page {
 
     @SuppressWarnings("SuspiciousNameCombination")
     @Override
-    public void draw(final float[] eyePos, float[] viewMatrix, float[] projectionMatrix) {
+    public void draw(final float[] eyePos, float[] viewProjectionMatrix) {
         mProgram.use();
 
-        multiplyMM(mTemp, 0, projectionMatrix, 0, viewMatrix, 0);
-        multiplyMM(mMVPMatrix, 0, mTemp, 0, mModelMatrix, 0);
-        glUniformMatrix4fv(mProgram.getMatrixLocation(), 1, false, mMVPMatrix, 0);
+        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
+        glUniformMatrix4fv(mProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
         glUniform3fv(mProgram.getLightDirectionLocation(), 1, mLightDirection, 0);
         glUniform3fv(mProgram.getLightAmbientLocation(), 1, mLightAmbient, 0);
         glUniform3fv(mProgram.getLightDiffuseLocation(), 1, mLightDiffuse, 0);

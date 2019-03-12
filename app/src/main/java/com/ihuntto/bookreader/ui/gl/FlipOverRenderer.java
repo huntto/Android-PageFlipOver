@@ -23,6 +23,7 @@ import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_SRC_ALPHA;
 import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glEnable;
+import static android.opengl.Matrix.orthoM;
 import static android.opengl.Matrix.perspectiveM;
 import static android.opengl.Matrix.setLookAtM;
 
@@ -52,8 +53,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     private float mCurrentX;
     private float mCurrentY;
 
-    private float[] mViewMatrix = new float[16];
-    private float[] mProjectionMatrix = new float[16];
+    private float[] mViewProjectionMatrix = new float[16];
 
     private Context mContext;
     private FlatPage mFlatPage;
@@ -101,13 +101,12 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mMinTargetX = -width - 1;
 
         GLES20.glViewport(0, 0, width, height);
-        perspectiveM(mProjectionMatrix, 0, 45, (float) width / (float) height, 1f, 10f);
-        setLookAtM(mViewMatrix, 0, mEyePos[0], mEyePos[1], mEyePos[2], 0f, 0f, 0f, 0f, 1f, 0f);
+        orthoM(mViewProjectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
         int flatHeight = 0;
         int baseFoldHeight = 1;
         int maxFoldHeight = (int) (width / 5.0f + baseFoldHeight);
-        ;
+
         FlatPageShaderProgram flatPageShaderProgram = new FlatPageShaderProgram(mContext);
         flatPageShaderProgram.compile();
         mFlatPage = new FlatPage(flatPageShaderProgram, width, height, flatHeight, maxFoldHeight);
@@ -189,7 +188,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
         if (!isFlipping()) {
             mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
-            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+            mFlatPage.draw(mEyePos, mViewProjectionMatrix);
         } else {
             if (mFlipState == STATE_FLIP_TO_LEFT) {
                 mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex));
@@ -199,9 +198,9 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
 
-            mFlatPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+            mFlatPage.draw(mEyePos, mViewProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            mFoldPage.draw(mEyePos, mViewMatrix, mProjectionMatrix);
+            mFoldPage.draw(mEyePos, mViewProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();
