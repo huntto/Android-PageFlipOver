@@ -28,7 +28,7 @@ public abstract class Page {
         setIdentityM(mModelMatrix, 0);
         translateM(translateMatrix, 0, -width / 2f, -height / 2f, 0f);
         // 右手系统
-        scaleM(scaleMatrix, 0, 2.0f / width, -2.0f / height, 1.0f / maxFoldHeight);
+        scaleM(scaleMatrix, 0, -2.0f / width, -2.0f / height, -1.0f / maxFoldHeight);
         multiplyMM(mModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
     }
 

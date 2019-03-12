@@ -23,6 +23,7 @@ import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_SRC_ALPHA;
 import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glEnable;
+import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.orthoM;
 import static android.opengl.Matrix.perspectiveM;
 import static android.opengl.Matrix.setLookAtM;
@@ -101,7 +102,11 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mMinTargetX = -width - 1;
 
         GLES20.glViewport(0, 0, width, height);
-        orthoM(mViewProjectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+        float[] viewMatrix = new float[16];
+        float[] projectionMatrix = new float[16];
+        setLookAtM(viewMatrix, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0);
+        orthoM(projectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+        multiplyMM(mViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
         int flatHeight = 0;
         int baseFoldHeight = 1;
