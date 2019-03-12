@@ -109,7 +109,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         multiplyMM(mViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
         int flatHeight = 0;
-        int baseFoldHeight = 1;
+        int baseFoldHeight = width / 10;
         int maxFoldHeight = (int) (width / 5.0f + baseFoldHeight);
 
         FlatPageShaderProgram flatPageShaderProgram = new FlatPageShaderProgram(mContext);
