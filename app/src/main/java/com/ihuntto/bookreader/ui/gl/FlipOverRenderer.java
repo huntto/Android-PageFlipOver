@@ -9,6 +9,7 @@ import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowShaderProgram;
 import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
 import com.ihuntto.bookreader.ui.gl.shape.FoldPage;
 import com.ihuntto.bookreader.ui.gl.util.TextureManager;
@@ -23,6 +24,7 @@ import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_SRC_ALPHA;
 import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glEnable;
+import static android.opengl.Matrix.frustumM;
 import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.orthoM;
 import static android.opengl.Matrix.perspectiveM;
@@ -55,6 +57,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
     private float mCurrentY;
 
     private float[] mViewProjectionMatrix = new float[16];
+    private float[] mLightViewProjectionMatrix = new float[16];
 
     private Context mContext;
     private FlatPage mFlatPage;
@@ -77,12 +80,14 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     private Color mBackgroundColor;
     private float[] mEyePos;
+    private float[] mLightPos;
 
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
-        mEyePos = new float[]{0f, 0f, -1.5f};
+        mEyePos = new float[]{0f, 0f, -10.0f};
+        mLightPos = new float[]{0f, 0f, -10.0f};
     }
 
     @Override
@@ -104,9 +109,14 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         GLES20.glViewport(0, 0, width, height);
         float[] viewMatrix = new float[16];
         float[] projectionMatrix = new float[16];
-        setLookAtM(viewMatrix, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0);
-        orthoM(projectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+        setLookAtM(viewMatrix, 0, mEyePos[0], mEyePos[1], mEyePos[2], 0, 0, 0, 0, 1, 0);
+        orthoM(projectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
         multiplyMM(mViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+
+//
+//        frustumM(projectionMatrix, 0, -1f, 1f, -1f, 1f, 0f, 10f);
+//        setLookAtM(viewMatrix, 0, mLightPos[0], mLightPos[1], mLightPos[2], 0f, 0f, 0f, 0f, 1f, 0f);
+//        multiplyMM(mLightViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
         int flatHeight = 0;
         int baseFoldHeight = width / 10;
@@ -119,6 +129,10 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         FoldPageShaderProgram foldPageShaderProgram = new FoldPageShaderProgram(mContext);
         foldPageShaderProgram.compile();
         mFoldPage = new FoldPage(foldPageShaderProgram, width, height, baseFoldHeight, maxFoldHeight);
+
+        FoldPageShadowShaderProgram foldPageShadowShaderProgram = new FoldPageShadowShaderProgram(mContext);
+        foldPageShadowShaderProgram.compile();
+        mFoldPage.setShadowProgram(foldPageShadowShaderProgram);
 
         mConstraintX = maxFoldHeight;
     }
@@ -206,6 +220,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             mFlatPage.draw(mEyePos, mViewProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
             mFoldPage.draw(mEyePos, mViewProjectionMatrix);
+//            mFoldPage.drawShadow(mLightPos, mLightViewProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();

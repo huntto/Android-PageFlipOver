@@ -1,8 +1,10 @@
 package com.ihuntto.bookreader.ui.gl.shape;
 
 import android.graphics.PointF;
+import android.util.Log;
 
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowShaderProgram;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -19,6 +21,7 @@ import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2f;
+import static android.opengl.GLES20.glUniform3f;
 import static android.opengl.GLES20.glUniform3fv;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
@@ -41,6 +44,7 @@ public class FoldPage extends Page {
     private FloatBuffer mVertexData;
 
     private FoldPageShaderProgram mProgram;
+    private FoldPageShadowShaderProgram mShadowProgram;
 
     private final float[] mMVPMatrix = new float[16];
     private final float[] mTemp = new float[32];
@@ -102,7 +106,12 @@ public class FoldPage extends Page {
 
         multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
         glUniformMatrix4fv(mProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
-
+        float[] v = new float[]{1, 1, mMaxFoldHeight, 1};
+        float[]r = new float[4];
+        multiplyMV(r, 0, mMVPMatrix, 0, v, 0);
+        for (float i : r) {
+            Log.e("TEST", " " + i);
+        }
         glUniform2f(mProgram.getPageSizeLocation(), mWidth, mHeight);
         glUniform2f(mProgram.getDragLocation(), mDragPoint.x, mDragPoint.y);
         glUniform2f(mProgram.getOriginLocation(), mOriginPoint.x, mOriginPoint.y);
@@ -131,6 +140,32 @@ public class FoldPage extends Page {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mTextureId);
         glUniform1i(mProgram.getTextureUnitLocation(), 0);
+
+        glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
+    }
+
+    public void setShadowProgram(FoldPageShadowShaderProgram shadowProgram) {
+        mShadowProgram = shadowProgram;
+    }
+
+    public void drawShadow(final float[] lightPos, float[] lightViewProjectionMatrix) {
+        mShadowProgram.use();
+
+        multiplyMM(mMVPMatrix, 0, lightViewProjectionMatrix, 0, mModelMatrix, 0);
+        glUniformMatrix4fv(mShadowProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
+
+        glUniformMatrix4fv(mShadowProgram.getModelMatrixLocation(), 1, false, mModelMatrix, 0);
+
+        glUniform2f(mShadowProgram.getDragLocation(), mDragPoint.x, mDragPoint.y);
+        glUniform2f(mShadowProgram.getOriginLocation(), mOriginPoint.x, mOriginPoint.y);
+        glUniform1f(mShadowProgram.getMaxFoldHeightLocation(), mMaxFoldHeight);
+        glUniform1f(mShadowProgram.getBaseFoldHeightLocation(), mBaseFoldHeight);
+        glUniform3fv(mShadowProgram.getLightPosLocation(), 1, lightPos, 0);
+
+        mVertexData.position(0);
+        glVertexAttribPointer(mShadowProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
+                false, 0, mVertexData);
+        glEnableVertexAttribArray(mShadowProgram.getPositionLocation());
 
         glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }

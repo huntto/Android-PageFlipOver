@@ -20,6 +20,7 @@ public abstract class Page {
     public Page(int width, int height, int maxFoldHeight) {
         final float[] translateMatrix = new float[16];
         final float[] scaleMatrix = new float[16];
+        final float[] temp = new float[16];
 
         setIdentityM(translateMatrix, 0);
         setIdentityM(scaleMatrix, 0);
@@ -30,6 +31,9 @@ public abstract class Page {
         // 右手系统
         scaleM(scaleMatrix, 0, -2.0f / width, -2.0f / height, -1.0f / maxFoldHeight);
         multiplyMM(mModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
+//
+//        translateM(translateMatrix, 0, 0, 0, 0.0f);
+//        multiplyMM(mModelMatrix, 0, translateMatrix, 0, temp, 0);
     }
 
     public void setTexture(int textureId) {

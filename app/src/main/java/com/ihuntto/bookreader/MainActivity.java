@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        useFlipOver(ViewPagerFlipOver.class, R.id.view_pager_flip_over);
+        useFlipOver(SimpleGLFlipOver.class, R.id.simple_gl_flip_over);
         mPageEditView = findViewById(R.id.page_edit_view);
     }
 
