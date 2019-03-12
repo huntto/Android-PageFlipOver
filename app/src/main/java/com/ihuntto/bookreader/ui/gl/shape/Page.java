@@ -13,14 +13,13 @@ public abstract class Page {
     protected float[] mLightAmbient = new float[]{0.2f, 0.2f, 0.2f};
     protected float[] mLightDiffuse = new float[]{0.8f, 0.8f, 0.8f};
     // 镜面光尽量小
-    protected float[] mLightSpecular = new float[]{0.1f, 0.1f, 0.1f};
+    protected float[] mLightSpecular = new float[]{0.05f, 0.05f, 0.05f};
 
     protected float[] mLightColor = new float[]{1.0f, 1.0f, 1.0f};
 
     public Page(int width, int height, int maxFoldHeight) {
         final float[] translateMatrix = new float[16];
         final float[] scaleMatrix = new float[16];
-        final float[] temp = new float[16];
 
         setIdentityM(translateMatrix, 0);
         setIdentityM(scaleMatrix, 0);
@@ -28,12 +27,8 @@ public abstract class Page {
         // 调整xy
         setIdentityM(mModelMatrix, 0);
         translateM(translateMatrix, 0, -width / 2f, -height / 2f, 0f);
-        // 右手系统
-        scaleM(scaleMatrix, 0, -2.0f / width, -2.0f / height, -1.0f / maxFoldHeight);
+        scaleM(scaleMatrix, 0, 2.0f / width, -2.0f / height, 1.0f / (maxFoldHeight + 1));
         multiplyMM(mModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
-//
-//        translateM(translateMatrix, 0, 0, 0, 0.0f);
-//        multiplyMM(mModelMatrix, 0, translateMatrix, 0, temp, 0);
     }
 
     public void setTexture(int textureId) {

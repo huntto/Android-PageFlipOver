@@ -3,6 +3,7 @@ package com.ihuntto.bookreader.ui.gl;
 import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import com.ihuntto.bookreader.BuildConfig;
@@ -86,8 +87,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
-        mEyePos = new float[]{0f, 0f, -10.0f};
-        mLightPos = new float[]{0f, 0f, -10.0f};
+        mEyePos = new float[]{0f, 0f, 2.0f};
     }
 
     @Override
@@ -107,18 +107,16 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mMinTargetX = -width - 1;
 
         GLES20.glViewport(0, 0, width, height);
-        float[] viewMatrix = new float[16];
-        float[] projectionMatrix = new float[16];
-        setLookAtM(viewMatrix, 0, mEyePos[0], mEyePos[1], mEyePos[2], 0, 0, 0, 0, 1, 0);
-        orthoM(projectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
-        multiplyMM(mViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+        orthoM(mViewProjectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
 
-//
-//        frustumM(projectionMatrix, 0, -1f, 1f, -1f, 1f, 0f, 10f);
+//        mLightPos = new float[]{0f, 0f, (float) (Math.sqrt(3) + 1.0)};
+//        float[] viewMatrix = new float[16];
+//        float[] projectionMatrix = new float[16];
+//        perspectiveM(projectionMatrix, 0, 60, 1f, 1f, 100f);
 //        setLookAtM(viewMatrix, 0, mLightPos[0], mLightPos[1], mLightPos[2], 0f, 0f, 0f, 0f, 1f, 0f);
 //        multiplyMM(mLightViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
-        int flatHeight = 0;
+        int flatHeight = 1;
         int baseFoldHeight = width / 10;
         int maxFoldHeight = (int) (width / 5.0f + baseFoldHeight);
 

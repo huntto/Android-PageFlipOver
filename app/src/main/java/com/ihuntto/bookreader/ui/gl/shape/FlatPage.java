@@ -1,7 +1,5 @@
 package com.ihuntto.bookreader.ui.gl.shape;
 
-import android.util.Log;
-
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 
 import java.nio.ByteBuffer;
@@ -75,12 +73,6 @@ public class FlatPage extends Page {
         glUniform3fv(mProgram.getLightSpecularLocation(), 1, mLightSpecular, 0);
         glUniform3fv(mProgram.getLightColorLocation(), 1, mLightColor, 0);
 
-        float[] v = new float[]{1, 1, 0, 1};
-        float[]r = new float[4];
-        multiplyMV(r, 0, mMVPMatrix, 0, v, 0);
-        for (float i : r) {
-            Log.e("TEST", " " + i);
-        }
         invertM(mTemp, 0, mMVPMatrix, 0);
         transposeM(mTemp, 16, mTemp, 0);
         mTemp[4] = eyePos[0];

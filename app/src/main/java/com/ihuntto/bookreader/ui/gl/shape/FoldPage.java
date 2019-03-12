@@ -1,7 +1,6 @@
 package com.ihuntto.bookreader.ui.gl.shape;
 
 import android.graphics.PointF;
-import android.util.Log;
 
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowShaderProgram;
@@ -21,7 +20,6 @@ import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2f;
-import static android.opengl.GLES20.glUniform3f;
 import static android.opengl.GLES20.glUniform3fv;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
@@ -106,12 +104,7 @@ public class FoldPage extends Page {
 
         multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
         glUniformMatrix4fv(mProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
-        float[] v = new float[]{1, 1, mMaxFoldHeight, 1};
-        float[]r = new float[4];
-        multiplyMV(r, 0, mMVPMatrix, 0, v, 0);
-        for (float i : r) {
-            Log.e("TEST", " " + i);
-        }
+
         glUniform2f(mProgram.getPageSizeLocation(), mWidth, mHeight);
         glUniform2f(mProgram.getDragLocation(), mDragPoint.x, mDragPoint.y);
         glUniform2f(mProgram.getOriginLocation(), mOriginPoint.x, mOriginPoint.y);
