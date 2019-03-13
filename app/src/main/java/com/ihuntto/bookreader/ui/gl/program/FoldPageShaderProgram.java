@@ -45,8 +45,11 @@ public class FoldPageShaderProgram extends ShaderProgram {
 
     private int mPositionLocation;
 
-    private String mVertexShaderSource;
-    private String mFragmentShaderSource;
+    protected String mVertexShaderSource;
+    protected String mFragmentShaderSource;
+
+    protected FoldPageShaderProgram() {
+    }
 
     public FoldPageShaderProgram(Context context) {
         mVertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.fold_page_vertex_shader);

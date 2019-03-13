@@ -9,6 +9,7 @@ import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForFlatShaderProgram;
 import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
 import com.ihuntto.bookreader.ui.gl.shape.FoldPage;
 import com.ihuntto.bookreader.ui.gl.util.TextureManager;
@@ -114,6 +115,10 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         foldPageShaderProgram.compile();
         mFoldPage = new FoldPage(foldPageShaderProgram, width, height, baseFoldHeight, maxFoldHeight);
 
+        FoldPageShadowForFlatShaderProgram foldPageShadowForFlatShaderProgram = new FoldPageShadowForFlatShaderProgram(mContext);
+        foldPageShadowForFlatShaderProgram.compile();
+        mFoldPage.setShadowForFlatProgram(foldPageShadowForFlatShaderProgram);
+
         mConstraintX = maxFoldHeight;
     }
 
@@ -200,6 +205,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             mFlatPage.draw(mEyePos, mViewProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
             mFoldPage.draw(mEyePos, mViewProjectionMatrix);
+            mFoldPage.drawShadowForFlat(mEyePos, mViewProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();

@@ -3,6 +3,7 @@ package com.ihuntto.bookreader.ui.gl.shape;
 import android.graphics.PointF;
 
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForFlatShaderProgram;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -131,6 +132,32 @@ public class FoldPage extends Page {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mTextureId);
         glUniform1i(mProgram.getTextureUnitLocation(), 0);
+
+        glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
+    }
+
+    private FoldPageShadowForFlatShaderProgram mShadowForFlatShaderProgram;
+
+    public void setShadowForFlatProgram(FoldPageShadowForFlatShaderProgram shadowForFlatProgram) {
+        mShadowForFlatShaderProgram = shadowForFlatProgram;
+    }
+
+    public void drawShadowForFlat(final float[] eyePos, float[] viewProjectionMatrix) {
+        mShadowForFlatShaderProgram.use();
+
+        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
+        glUniformMatrix4fv(mShadowForFlatShaderProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
+
+        glUniform2f(mShadowForFlatShaderProgram.getPageSizeLocation(), mWidth, mHeight);
+        glUniform2f(mShadowForFlatShaderProgram.getDragLocation(), mDragPoint.x, mDragPoint.y);
+        glUniform2f(mShadowForFlatShaderProgram.getOriginLocation(), mOriginPoint.x, mOriginPoint.y);
+        glUniform1f(mShadowForFlatShaderProgram.getMaxFoldHeightLocation(), mMaxFoldHeight);
+        glUniform1f(mShadowForFlatShaderProgram.getBaseFoldHeightLocation(), mBaseFoldHeight);
+
+        mVertexData.position(0);
+        glVertexAttribPointer(mShadowForFlatShaderProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
+                false, 0, mVertexData);
+        glEnableVertexAttribArray(mShadowForFlatShaderProgram.getPositionLocation());
 
         glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }
