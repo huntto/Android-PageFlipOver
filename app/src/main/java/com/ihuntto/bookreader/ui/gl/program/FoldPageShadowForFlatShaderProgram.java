@@ -9,7 +9,7 @@ public class FoldPageShadowForFlatShaderProgram extends FoldPageShaderProgram {
 
     public FoldPageShadowForFlatShaderProgram(Context context) {
         mVertexShaderSource = TextResourceReader.readTextFromResource(context, R.raw.fold_page_shadow_for_flat_vertex_shader);
-        mFragmentShaderSource = TextResourceReader.readTextFromResource(context, R.raw.fold_page_shadow_fragment_shader);
+        mFragmentShaderSource = TextResourceReader.readTextFromResource(context, R.raw.fold_page_shadow_for_flat_fragment_shader);
 
     }
 }

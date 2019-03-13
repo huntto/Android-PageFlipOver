@@ -10,6 +10,7 @@ import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForFlatShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForSelfShaderProgram;
 import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
 import com.ihuntto.bookreader.ui.gl.shape.FoldPage;
 import com.ihuntto.bookreader.ui.gl.util.TextureManager;
@@ -119,6 +120,10 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         foldPageShadowForFlatShaderProgram.compile();
         mFoldPage.setShadowForFlatProgram(foldPageShadowForFlatShaderProgram);
 
+        FoldPageShadowForSelfShaderProgram foldPageShadowForSelfShaderProgram = new FoldPageShadowForSelfShaderProgram(mContext);
+        foldPageShadowForSelfShaderProgram.compile();
+        mFoldPage.setShadowForSelfProgram(foldPageShadowForSelfShaderProgram);
+
         mConstraintX = maxFoldHeight;
     }
 
@@ -205,7 +210,8 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             mFlatPage.draw(mEyePos, mViewProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
             mFoldPage.draw(mEyePos, mViewProjectionMatrix);
-            mFoldPage.drawShadowForFlat(mEyePos, mViewProjectionMatrix);
+            mFoldPage.drawShadowForFlat(mViewProjectionMatrix);
+            mFoldPage.drawShadowForSelf(mViewProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();

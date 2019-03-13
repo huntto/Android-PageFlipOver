@@ -4,6 +4,7 @@ import android.graphics.PointF;
 
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForFlatShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForSelfShaderProgram;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -142,7 +143,7 @@ public class FoldPage extends Page {
         mShadowForFlatShaderProgram = shadowForFlatProgram;
     }
 
-    public void drawShadowForFlat(final float[] eyePos, float[] viewProjectionMatrix) {
+    public void drawShadowForFlat(float[] viewProjectionMatrix) {
         mShadowForFlatShaderProgram.use();
 
         multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
@@ -158,6 +159,32 @@ public class FoldPage extends Page {
         glVertexAttribPointer(mShadowForFlatShaderProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
                 false, 0, mVertexData);
         glEnableVertexAttribArray(mShadowForFlatShaderProgram.getPositionLocation());
+
+        glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
+    }
+
+    private FoldPageShadowForSelfShaderProgram mShadowForSelfShaderProgram;
+
+    public void setShadowForSelfProgram(FoldPageShadowForSelfShaderProgram shadowForSelfProgram) {
+        mShadowForSelfShaderProgram = shadowForSelfProgram;
+    }
+
+    public void drawShadowForSelf(float[] viewProjectionMatrix) {
+        mShadowForSelfShaderProgram.use();
+
+        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
+        glUniformMatrix4fv(mShadowForSelfShaderProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
+
+        glUniform2f(mShadowForSelfShaderProgram.getPageSizeLocation(), mWidth, mHeight);
+        glUniform2f(mShadowForSelfShaderProgram.getDragLocation(), mDragPoint.x, mDragPoint.y);
+        glUniform2f(mShadowForSelfShaderProgram.getOriginLocation(), mOriginPoint.x, mOriginPoint.y);
+        glUniform1f(mShadowForSelfShaderProgram.getMaxFoldHeightLocation(), mMaxFoldHeight);
+        glUniform1f(mShadowForSelfShaderProgram.getBaseFoldHeightLocation(), mBaseFoldHeight);
+
+        mVertexData.position(0);
+        glVertexAttribPointer(mShadowForSelfShaderProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
+                false, 0, mVertexData);
+        glEnableVertexAttribArray(mShadowForSelfShaderProgram.getPositionLocation());
 
         glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }
