@@ -16,13 +16,15 @@ uniform float uMaxFoldHeight;
 // 折叠时的基本高度
 uniform float uBaseFoldHeight;
 
+varying float vAlphaRatio;
+
 attribute vec2 aPosition;
 
-
 void main() {
-    vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
+    vAlphaRatio = 1.0;
 
-    vec3 normal = vec3(0.0, 0.0, 1.0);
+    vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight - 1.0);
+
     // 中点
     float x0 = (uDragPoint.x + uOriginPoint.x) / 2.0;
     float y0 = (uDragPoint.y + uOriginPoint.y) / 2.0;
@@ -47,39 +49,28 @@ void main() {
     if (needFold) {
         // 当前点移动到对称点位置
         vec2 symmetric = aPosition + (dist * 2.0) * normalizedDragVec;
-        newPosition = vec3(symmetric.xy, uMaxFoldHeight);
+        newPosition = vec3(symmetric.xy, newPosition.z);
     }
 
     // 压缩
     float radius = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
     float maxDist = PI/2.0 * radius;
-    float simpleLight = 1.0;
     if (dist < maxDist) {
-        float alpha = (maxDist - dist) / radius;
-        float d = radius * sin(alpha);
+        float radian = (maxDist - dist) / radius;
+        float d = radius * sin(radian);
         float offsetDist = (maxDist - dist) - d;
         vec2 offsetPosition = vec2(newPosition.xy) + offsetDist * normalizedDragVec;
         newPosition.x = offsetPosition.x;
         newPosition.y = offsetPosition.y;
 
-        float h = radius * cos(alpha);
-        float height;
-
-        vec2 centerPoint = vec2(newPosition.xy) + (maxDist - dist) * normalizedDragVec;
-        if (needFold) {
-            height = h + radius;
-            normal = newPosition - vec3(centerPoint, radius + uBaseFoldHeight);
-        } else {
-            height = radius - h;
-            normal = -newPosition + vec3(centerPoint, radius + uBaseFoldHeight);
-        }
-        newPosition.z = height + uBaseFoldHeight;
+        vAlphaRatio = pow(cos(radian), 2.0);
     }
 
     // 计算当前y对应在中垂线上的x
     float cx =  (newPosition.y-y0)*dragVec.y / dragVec.x + x0;
-
-    float minOffset = uPageSize.x / 80.0;
+    // 向右平移x
+    float minOffset = uPageSize.x / 64.0;
     newPosition.x += minOffset + x0 / uPageSize.x * minOffset;
-    gl_Position = uMVPMatrix * vec4(newPosition.x, newPosition.y, uBaseFoldHeight - 1.0, 1.0);
+
+    gl_Position = uMVPMatrix * vec4(newPosition.xyz, 1.0);
 }
