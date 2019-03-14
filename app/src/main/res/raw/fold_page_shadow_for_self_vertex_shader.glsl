@@ -19,25 +19,23 @@ uniform float uBaseFoldHeight;
 attribute vec2 aPosition;
 
 varying float vIsFold;
+varying float vAlphaRatio;
 
 void main() {
-
+    vIsFold = 0.0;
     vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
 
-    float downRatio = 0.75;
+    // 压缩折叠的基准高度和最大高度
+    float downRatio = 0.64;
     float oldFoldHeight = uMaxFoldHeight - uBaseFoldHeight;
     float newFoldHeight = oldFoldHeight * downRatio;
     float newBaseFoldHeight = uBaseFoldHeight + (oldFoldHeight - newFoldHeight) / 2.0;
     float newMaxFoldHeight = uMaxFoldHeight - (oldFoldHeight - newFoldHeight) / 2.0;
 
+    // 重新计算拖拽点
     float r1 = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
     float r2 = r1 * downRatio;
-
     float newDragPointOffset = PI * r1 - 2.0 * (r1 - r2) - PI * r2;
-
-    vIsFold = 0.0;
-    vec3 normal = vec3(0.0, 0.0, 1.0);
-
     vec2 newDragPoint = uDragPoint + newDragPointOffset * normalize(uDragPoint - uOriginPoint);
 
     // 中点
@@ -68,30 +66,35 @@ void main() {
         vIsFold = 1.0;
     }
 
+    // 计算阴影边缘透明度
+    if (needFold) {
+        vAlphaRatio = 1.0;
+        float edgeOffset = newDragPointOffset * 0.8;
+
+        if (aPosition.x > uPageSize.x - edgeOffset) {
+            vAlphaRatio *= (uPageSize.x - aPosition.x) / edgeOffset;
+        } else if (aPosition.x < edgeOffset){
+            vAlphaRatio *= aPosition.x / edgeOffset;
+        }
+        if (aPosition.y > uPageSize.y - edgeOffset) {
+            vAlphaRatio *= (uPageSize.y - aPosition.y) / edgeOffset;
+        } else if (aPosition.y < edgeOffset) {
+            vAlphaRatio *= aPosition.y / edgeOffset;
+        }
+        vAlphaRatio = pow(vAlphaRatio, 2.0);
+    }
+
     // 压缩
     float radius = (newMaxFoldHeight - newBaseFoldHeight) / 2.0;
     float maxDist = PI/2.0 * radius;
     float simpleLight = 1.0;
     if (dist < maxDist) {
-        float alpha = (maxDist - dist) / radius;
-        float d = radius * sin(alpha);
+        float radian = (maxDist - dist) / radius;
+        float d = radius * sin(radian);
         float offsetDist = (maxDist - dist) - d;
         vec2 offsetPosition = vec2(newPosition.xy) + offsetDist * normalizedDragVec;
         newPosition.x = offsetPosition.x;
         newPosition.y = offsetPosition.y;
-
-        float h = radius * cos(alpha);
-        float height;
-
-        vec2 centerPoint = vec2(newPosition.xy) + (maxDist - dist) * normalizedDragVec;
-        if (needFold) {
-            height = h + radius;
-            normal = newPosition - vec3(centerPoint, radius + newBaseFoldHeight);
-        } else {
-            height = radius - h;
-            normal = -newPosition + vec3(centerPoint, radius + newBaseFoldHeight);
-        }
-        newPosition.z = height + newBaseFoldHeight;
     }
 
     gl_Position = uMVPMatrix * vec4(newPosition.x, newPosition.y, uBaseFoldHeight + (uMaxFoldHeight - uBaseFoldHeight) / 2.0, 1.0);
