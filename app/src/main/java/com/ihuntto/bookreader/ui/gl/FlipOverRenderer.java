@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
+import com.ihuntto.bookreader.ui.gl.light.Light;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
 import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForFlatShaderProgram;
@@ -76,13 +77,21 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
     private Color mBackgroundColor;
     private float[] mEyePos;
-    private float[] mLightPos;
+    private Light mLight;
 
     public FlipOverRenderer(GLSurfaceView surfaceView) {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
         mEyePos = new float[]{0f, 0f, 2.0f};
+
+        mLight = new Light.Builder()
+                .direction(-1.0f, 0.0f, -8.0f)
+                .ambient(0.2f, 0.2f, 0.2f)
+                .color(1.0f, 1.0f, 1.0f)
+                .specular(0.05f, 0.05f, 0.05f)
+                .diffuse(0.8f, 0.8f, 0.8f)
+                .create();
     }
 
     @Override
@@ -197,7 +206,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
 
         if (!isFlipping()) {
             mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
-            mFlatPage.draw(mEyePos, mViewProjectionMatrix);
+            mFlatPage.draw(mEyePos, mLight, mViewProjectionMatrix);
         } else {
             if (mFlipState == STATE_FLIP_TO_LEFT) {
                 mFoldPage.setTexture(getPageTextureId(mCurrentPageIndex));
@@ -207,9 +216,9 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
                 mFlatPage.setTexture(getPageTextureId(mCurrentPageIndex));
             }
 
-            mFlatPage.draw(mEyePos, mViewProjectionMatrix);
+            mFlatPage.draw(mEyePos, mLight, mViewProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
-            mFoldPage.draw(mEyePos, mViewProjectionMatrix);
+            mFoldPage.draw(mEyePos, mLight, mViewProjectionMatrix);
             mFoldPage.drawShadowForFlat(mViewProjectionMatrix);
             mFoldPage.drawShadowForSelf(mViewProjectionMatrix);
         }

@@ -1,5 +1,6 @@
 package com.ihuntto.bookreader.ui.gl.shape;
 
+import com.ihuntto.bookreader.ui.gl.light.Light;
 import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
 
 import java.nio.ByteBuffer;
@@ -62,16 +63,16 @@ public class FlatPage extends Page {
 
     @SuppressWarnings("SuspiciousNameCombination")
     @Override
-    public void draw(final float[] eyePos, float[] viewProjectionMatrix) {
+    public void draw(final float[] eyePos, final Light light, float[] viewProjectionMatrix) {
         mProgram.use();
 
         multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
         glUniformMatrix4fv(mProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
-        glUniform3fv(mProgram.getLightDirectionLocation(), 1, mLightDirection, 0);
-        glUniform3fv(mProgram.getLightAmbientLocation(), 1, mLightAmbient, 0);
-        glUniform3fv(mProgram.getLightDiffuseLocation(), 1, mLightDiffuse, 0);
-        glUniform3fv(mProgram.getLightSpecularLocation(), 1, mLightSpecular, 0);
-        glUniform3fv(mProgram.getLightColorLocation(), 1, mLightColor, 0);
+        glUniform3fv(mProgram.getLightDirectionLocation(), 1, light.getDirection(), 0);
+        glUniform3fv(mProgram.getLightAmbientLocation(), 1, light.getAmbient(), 0);
+        glUniform3fv(mProgram.getLightDiffuseLocation(), 1, light.getDiffuse(), 0);
+        glUniform3fv(mProgram.getLightSpecularLocation(), 1, light.getSpecular(), 0);
+        glUniform3fv(mProgram.getLightColorLocation(), 1, light.getColor(), 0);
 
         invertM(mTemp, 0, mMVPMatrix, 0);
         transposeM(mTemp, 16, mTemp, 0);
