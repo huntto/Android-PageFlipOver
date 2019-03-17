@@ -14,13 +14,10 @@ import java.nio.FloatBuffer;
 import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TRIANGLES;
-import static android.opengl.Matrix.invertM;
 import static android.opengl.Matrix.multiplyMM;
-import static android.opengl.Matrix.multiplyMV;
 import static android.opengl.Matrix.scaleM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.translateM;
-import static android.opengl.Matrix.transposeM;
 
 public class FoldPage extends Page {
     private static final int POSITION_COMPONENT_COUNT = 2;
@@ -76,29 +73,29 @@ public class FoldPage extends Page {
     private final float[] mMVPMatrix = new float[16];
     private final float[] mTemp = new float[32];
     private final float[] mFoldModelMatrix = new float[16];
-    private final float[] mShadowForFlatModelMatrix = new float[16];
+    private final float[] mShadowRightModelMatrix = new float[16];
 
-    public FoldPage(int width, int height, int foldHeight) {
+    public FoldPage(int width, int height) {
         mWidth = width;
         mHeight = height;
-        mFoldHeight = foldHeight;
+        mFoldHeight = height;
 
         final float[] translateMatrix = new float[16];
         final float[] scaleMatrix = new float[16];
 
         setIdentityM(scaleMatrix, 0);
 
-        scaleM(scaleMatrix, 0, 2.0f / width, -2.0f / height, 1.0f / foldHeight);
+        scaleM(scaleMatrix, 0, 2.0f / width, -2.0f / height, 1.0f / height);
         // 调整xy
         setIdentityM(translateMatrix, 0);
-        translateM(translateMatrix, 0, -width / 2f, -height / 2f, foldHeight / 2.0f + 10.0f);
+        translateM(translateMatrix, 0, -width / 2f, -height / 2f, height / 2.0f + 2.0f);
         setIdentityM(mFoldModelMatrix, 0);
         multiplyMM(mFoldModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
 
         setIdentityM(translateMatrix, 0);
-        translateM(translateMatrix, 0, -width / 2f, -height / 2f, 5.0f);
-        setIdentityM(mShadowForFlatModelMatrix, 0);
-        multiplyMM(mShadowForFlatModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
+        translateM(translateMatrix, 0, -width / 2f, -height / 2f, 1.0f);
+        setIdentityM(mShadowRightModelMatrix, 0);
+        multiplyMM(mShadowRightModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
 
         final int step = 5;
         final int wCount = width / step;
@@ -142,7 +139,6 @@ public class FoldPage extends Page {
         mVertexData.put(vertices);
     }
 
-    @SuppressWarnings("SuspiciousNameCombination")
     @Override
     public void draw(final float[] eyePos, final Light light, float[] viewProjectionMatrix) {
         sFoldProgram.use();
@@ -158,15 +154,7 @@ public class FoldPage extends Page {
         sFoldProgram.setUniform3fv(U_LIGHT_SPECULAR, light.getSpecular());
         sFoldProgram.setUniform3fv(U_LIGHT_COLOR, light.getColor());
         sFoldProgram.setUniform1f(U_FOLD_HEIGHT, mFoldHeight);
-
-        invertM(mTemp, 0, mMVPMatrix, 0);
-        transposeM(mTemp, 16, mTemp, 0);
-        mTemp[4] = eyePos[0];
-        mTemp[5] = eyePos[1];
-        mTemp[6] = eyePos[2];
-        mTemp[7] = 0;
-        multiplyMV(mTemp, 0, mTemp, 16, mTemp, 4);
-        sFoldProgram.setUniform3fv(U_VIEW_POS, mTemp);
+        sFoldProgram.setUniform3fv(U_VIEW_POS, eyePos);
 
         mVertexData.position(0);
         sFoldProgram.setVertexAttribPointer(A_POSITION, POSITION_COMPONENT_COUNT, mVertexData);
@@ -187,7 +175,7 @@ public class FoldPage extends Page {
     private void drawShadowRight(float[] viewProjectionMatrix) {
         sShadowRightProgram.use();
 
-        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mShadowForFlatModelMatrix, 0);
+        multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mShadowRightModelMatrix, 0);
         sShadowRightProgram.setUniformMatrix4fv(U_MVP_MATRIX, mMVPMatrix);
         sShadowRightProgram.setUniform2f(U_PAGE_SIZE, mWidth, mHeight);
         sShadowRightProgram.setUniform2f(U_DRAG_POINT, mDragPoint.x, mDragPoint.y);
@@ -219,5 +207,12 @@ public class FoldPage extends Page {
     public void fold(float originX, float originY, float dragX, float dragY) {
         mOriginPoint.set(originX, originY);
         mDragPoint.set(dragX, dragY);
+
+        float cx = (originX + dragX) / 2;
+        float cy = (originY + dragY) / 2;
+
+        int candidateX = (int) (mWidth - cx);
+        int candidateY = (int) (mHeight - cy);
+        mFoldHeight = candidateX > candidateY ? candidateY : candidateX;
     }
 }

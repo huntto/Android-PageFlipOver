@@ -79,7 +79,6 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mGLSurfaceView = surfaceView;
         mContext = surfaceView.getContext();
         mBackgroundColor = new Color(0.9f, 0.9f, 0.9f, 1.0f);
-        mEyePos = new float[]{0f, 0f, 2.0f};
 
         mLight = new Light.Builder()
                 .direction(-1.0f, 0.0f, -8.0f)
@@ -108,6 +107,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mHeight = height;
         mMaxTargetX = width + 1;
         mMinTargetX = -width - 1;
+        mEyePos = new float[]{0f, 0f, height * 2};
 
         GLES20.glViewport(0, 0, width, height);
         orthoM(mViewProjectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
@@ -115,7 +115,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         mFlatPage = new FlatPage(width, height);
 
         int foldHeight = (int) (width / 5.0f);
-        mFoldPage = new FoldPage(width, height, foldHeight);
+        mFoldPage = new FoldPage(width, height);
 
         mConstraintX = foldHeight;
     }

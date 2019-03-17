@@ -15,13 +15,10 @@ import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glDrawArrays;
-import static android.opengl.Matrix.invertM;
 import static android.opengl.Matrix.multiplyMM;
-import static android.opengl.Matrix.multiplyMV;
 import static android.opengl.Matrix.scaleM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.translateM;
-import static android.opengl.Matrix.transposeM;
 
 public class FlatPage extends Page {
     private static final String U_MVP_MATRIX = "uMVPMatrix";
@@ -100,15 +97,7 @@ public class FlatPage extends Page {
         sProgram.setUniform3fv(U_LIGHT_DIFFUSE, light.getDiffuse());
         sProgram.setUniform3fv(U_LIGHT_SPECULAR, light.getSpecular());
         sProgram.setUniform3fv(U_LIGHT_COLOR, light.getColor());
-
-        invertM(mTemp, 0, mMVPMatrix, 0);
-        transposeM(mTemp, 16, mTemp, 0);
-        mTemp[4] = eyePos[0];
-        mTemp[5] = eyePos[1];
-        mTemp[6] = eyePos[2];
-        mTemp[7] = 0;
-        multiplyMV(mTemp, 0, mTemp, 16, mTemp, 4);
-        sProgram.setUniform3fv(U_VIEW_POS, mTemp);
+        sProgram.setUniform3fv(U_VIEW_POS, eyePos);
 
         sProgram.setUniform2f(U_PAGE_SIZE, mWidth, mHeight);
 

@@ -91,6 +91,7 @@ void main() {
             normal = -newPosition + vec3(centerPoint, 0.0);
         }
     }
+    newPosition.z += halfFoldHeight;
 
     normal = normalize(normal);
     // 环境光

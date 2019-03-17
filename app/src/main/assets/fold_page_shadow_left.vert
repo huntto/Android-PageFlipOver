@@ -92,5 +92,5 @@ void main() {
         newPosition.y = offsetPosition.y;
     }
 
-    gl_Position = uMVPMatrix * vec4(newPosition.xy, 0.0, 1.0);
+    gl_Position = uMVPMatrix * vec4(newPosition.xy, uFoldHeight/2.0, 1.0);
 }
