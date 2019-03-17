@@ -11,10 +11,8 @@ uniform vec2 uOriginPoint;
 uniform vec2 uDragPoint;
 // 页面尺寸
 uniform vec2 uPageSize;
-// 折叠时的最大高度
-uniform float uMaxFoldHeight;
-// 折叠时的基本高度
-uniform float uBaseFoldHeight;
+// 折叠高度
+uniform float uFoldHeight;
 
 attribute vec2 aPosition;
 
@@ -37,9 +35,7 @@ uniform vec3 uViewPos;
 
 void main() {
     vTextureCoordinates = vec2(aPosition.x / uPageSize.x, aPosition.y / uPageSize.y);
-    vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
-    vBlendColor = vec4(1.0);
-    vIsMix = 0.0;
+    vec3 newPosition = vec3(aPosition.xy, 0.0);
 
     vec3 normal = vec3(0.0, 0.0, 1.0);
     // 中点
@@ -63,17 +59,20 @@ void main() {
     vec2 normalizedDragVec = normalize(dragVec);
     // 如果origin和current符号相同，则在中垂线同侧，否则异侧
     bool needFold = origin * current > 0.0;
+    float halfFoldHeight = uFoldHeight / 2.0;
     if (needFold) {
         // 当前点移动到对称点位置
         vec2 symmetric = aPosition + (dist * 2.0) * normalizedDragVec;
-        newPosition = vec3(symmetric.xy, uMaxFoldHeight);
+        newPosition = vec3(symmetric.xy, halfFoldHeight);
         vIsMix = 1.0;
+    } else {
+        newPosition.z = -halfFoldHeight;
+        vIsMix = 0.0;
     }
 
     // 压缩
-    float radius = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
+    float radius = halfFoldHeight;
     float maxDist = PI/2.0 * radius;
-    float simpleLight = 1.0;
     if (dist < maxDist) {
         float alpha = (maxDist - dist) / radius;
         float d = radius * sin(alpha);
@@ -83,17 +82,14 @@ void main() {
         newPosition.y = offsetPosition.y;
 
         float h = radius * cos(alpha);
-        float height;
-
         vec2 centerPoint = vec2(newPosition.xy) + (maxDist - dist) * normalizedDragVec;
         if (needFold) {
-            height = h + radius;
-            normal = newPosition - vec3(centerPoint, radius + uBaseFoldHeight);
+            newPosition.z = h;
+            normal = newPosition - vec3(centerPoint, 0.0);
         } else {
-            height = radius - h;
-            normal = -newPosition + vec3(centerPoint, radius + uBaseFoldHeight);
+            newPosition.z = -h;
+            normal = -newPosition + vec3(centerPoint, 0.0);
         }
-        newPosition.z = height + uBaseFoldHeight;
     }
 
     normal = normalize(normal);

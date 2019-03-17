@@ -1,31 +1,44 @@
 package com.ihuntto.bookreader.ui.gl.shape;
 
+import android.content.Context;
+
+import com.ihuntto.bookreader.R;
 import com.ihuntto.bookreader.ui.gl.light.Light;
-import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
+import com.ihuntto.bookreader.ui.gl.program.ShaderProgram;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glDrawArrays;
-import static android.opengl.GLES20.glEnableVertexAttribArray;
-import static android.opengl.GLES20.glUniform1i;
-import static android.opengl.GLES20.glUniform2f;
-import static android.opengl.GLES20.glUniform3fv;
-import static android.opengl.GLES20.glUniformMatrix4fv;
-import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.Matrix.invertM;
 import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.multiplyMV;
+import static android.opengl.Matrix.scaleM;
+import static android.opengl.Matrix.setIdentityM;
+import static android.opengl.Matrix.translateM;
 import static android.opengl.Matrix.transposeM;
 
 public class FlatPage extends Page {
+    private static final String U_MVP_MATRIX = "uMVPMatrix";
+    private static final String U_PAGE_SIZE = "uPageSize";
+    private static final String U_TEXTURE_UNIT = "uTextureUnit";
+    // light
+    private static final String U_LIGHT_DIRECTION = "uLight.direction";
+    private static final String U_LIGHT_AMBIENT = "uLight.ambient";
+    private static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
+    private static final String U_LIGHT_SPECULAR = "uLight.specular";
+    private static final String U_LIGHT_COLOR = "uLight.color";
+    private static final String U_VIEW_POS = "uViewPos";
+
+    private static final String A_POSITION = "aPosition";
+
+
     private static final int POSITION_COMPONENT_COUNT = 3;
     private static final int BYTES_PER_FLOAT = 4;
 
@@ -33,24 +46,26 @@ public class FlatPage extends Page {
 
     private int mWidth;
     private int mHeight;
+    private static ShaderProgram sProgram;
 
-    private FlatPageShaderProgram mProgram;
+    public static void initProgram(Context context) {
+        sProgram = new ShaderProgram(context, R.raw.flat_page_vertex_shader, R.raw.flat_page_fragment_shader);
+        sProgram.compile();
+    }
 
+    private final float[] mModelMatrix = new float[16];
     private final float[] mMVPMatrix = new float[16];
     private final float[] mTemp = new float[32];
 
-    public FlatPage(FlatPageShaderProgram program, int width, int height, int flatHeight, int maxFoldHeight) {
-        super(width, height, maxFoldHeight);
-
-        mProgram = program;
+    public FlatPage(int width, int height) {
         mWidth = width;
         mHeight = height;
 
         final float[] vertices = {
-                0, mHeight, flatHeight,        // left bottom
-                0, 0, flatHeight,              // left top
-                mWidth, mHeight, flatHeight,   // right bottom
-                mWidth, 0, flatHeight          // right top
+                0, mHeight, 0,        // left bottom
+                0, 0, 0,              // left top
+                mWidth, mHeight, 0,   // right bottom
+                mWidth, 0, 0          // right top
         };
 
 
@@ -58,21 +73,33 @@ public class FlatPage extends Page {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         mVertexData.put(vertices);
-    }
 
+
+        final float[] translateMatrix = new float[16];
+        final float[] scaleMatrix = new float[16];
+
+        setIdentityM(translateMatrix, 0);
+        setIdentityM(scaleMatrix, 0);
+
+        // 调整xy
+        setIdentityM(mModelMatrix, 0);
+        translateM(translateMatrix, 0, -width / 2f, -height / 2f, 0f);
+        scaleM(scaleMatrix, 0, 2.0f / width, -2.0f / height, 1.0f);
+        multiplyMM(mModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
+    }
 
     @SuppressWarnings("SuspiciousNameCombination")
     @Override
     public void draw(final float[] eyePos, final Light light, float[] viewProjectionMatrix) {
-        mProgram.use();
+        sProgram.use();
 
         multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mModelMatrix, 0);
-        glUniformMatrix4fv(mProgram.getMVPMatrixLocation(), 1, false, mMVPMatrix, 0);
-        glUniform3fv(mProgram.getLightDirectionLocation(), 1, light.getDirection(), 0);
-        glUniform3fv(mProgram.getLightAmbientLocation(), 1, light.getAmbient(), 0);
-        glUniform3fv(mProgram.getLightDiffuseLocation(), 1, light.getDiffuse(), 0);
-        glUniform3fv(mProgram.getLightSpecularLocation(), 1, light.getSpecular(), 0);
-        glUniform3fv(mProgram.getLightColorLocation(), 1, light.getColor(), 0);
+        sProgram.setUniformMatrix4fv(U_MVP_MATRIX, mMVPMatrix);
+        sProgram.setUniform3fv(U_LIGHT_DIRECTION, light.getDirection());
+        sProgram.setUniform3fv(U_LIGHT_AMBIENT, light.getAmbient());
+        sProgram.setUniform3fv(U_LIGHT_DIFFUSE, light.getDiffuse());
+        sProgram.setUniform3fv(U_LIGHT_SPECULAR, light.getSpecular());
+        sProgram.setUniform3fv(U_LIGHT_COLOR, light.getColor());
 
         invertM(mTemp, 0, mMVPMatrix, 0);
         transposeM(mTemp, 16, mTemp, 0);
@@ -81,19 +108,16 @@ public class FlatPage extends Page {
         mTemp[6] = eyePos[2];
         mTemp[7] = 0;
         multiplyMV(mTemp, 0, mTemp, 16, mTemp, 4);
-        glUniform3fv(mProgram.getViewPosLocation(), 1, mTemp, 0);
+        sProgram.setUniform3fv(U_VIEW_POS, mTemp);
 
-
-        glUniform2f(mProgram.getPageSizeLocation(), mWidth, mHeight);
+        sProgram.setUniform2f(U_PAGE_SIZE, mWidth, mHeight);
 
         mVertexData.position(0);
-        glVertexAttribPointer(mProgram.getPositionLocation(), POSITION_COMPONENT_COUNT, GL_FLOAT,
-                false, 0, mVertexData);
-        glEnableVertexAttribArray(mProgram.getPositionLocation());
+        sProgram.setVertexAttribPointer(A_POSITION, POSITION_COMPONENT_COUNT, mVertexData);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mTextureId);
-        glUniform1i(mProgram.getTextureUnitLocation(), 0);
+        sProgram.setUniform1i(U_TEXTURE_UNIT, 0);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }
 }

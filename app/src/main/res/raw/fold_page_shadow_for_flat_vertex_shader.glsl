@@ -11,10 +11,8 @@ uniform vec2 uOriginPoint;
 uniform vec2 uDragPoint;
 // 页面尺寸
 uniform vec2 uPageSize;
-// 折叠时的最大高度
-uniform float uMaxFoldHeight;
-// 折叠时的基本高度
-uniform float uBaseFoldHeight;
+// 折叠高度
+uniform float uFoldHeight;
 
 varying float vAlphaRatio;
 
@@ -23,7 +21,7 @@ attribute vec2 aPosition;
 void main() {
     vAlphaRatio = 1.0;
 
-    vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight - 1.0);
+    vec3 newPosition = vec3(aPosition.xy, 0.0);
 
     // 中点
     float x0 = (uDragPoint.x + uOriginPoint.x) / 2.0;
@@ -53,7 +51,7 @@ void main() {
     }
 
     // 压缩
-    float radius = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
+    float radius = uFoldHeight / 2.0;
     float maxDist = PI/2.0 * radius;
     if (dist < maxDist) {
         float radian = (maxDist - dist) / radius;

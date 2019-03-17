@@ -11,10 +11,8 @@ uniform vec2 uOriginPoint;
 uniform vec2 uDragPoint;
 // 页面尺寸
 uniform vec2 uPageSize;
-// 折叠时的最大高度
-uniform float uMaxFoldHeight;
-// 折叠时的基本高度
-uniform float uBaseFoldHeight;
+// 折叠高度
+uniform float uFoldHeight;
 
 attribute vec2 aPosition;
 
@@ -23,17 +21,15 @@ varying float vAlphaRatio;
 
 void main() {
     vIsFold = 0.0;
-    vec3 newPosition = vec3(aPosition.xy, uBaseFoldHeight);
+    vec2 newPosition = vec2(aPosition.xy);
 
     // 压缩折叠的基准高度和最大高度
     float downRatio = 0.64;
-    float oldFoldHeight = uMaxFoldHeight - uBaseFoldHeight;
+    float oldFoldHeight = uFoldHeight;
     float newFoldHeight = oldFoldHeight * downRatio;
-    float newBaseFoldHeight = uBaseFoldHeight + (oldFoldHeight - newFoldHeight) / 2.0;
-    float newMaxFoldHeight = uMaxFoldHeight - (oldFoldHeight - newFoldHeight) / 2.0;
 
     // 重新计算拖拽点
-    float r1 = (uMaxFoldHeight - uBaseFoldHeight) / 2.0;
+    float r1 = uFoldHeight / 2.0;
     float r2 = r1 * downRatio;
     float newDragPointOffset = PI * r1 - 2.0 * (r1 - r2) - PI * r2;
     vec2 newDragPoint = uDragPoint + newDragPointOffset * normalize(uDragPoint - uOriginPoint);
@@ -61,8 +57,7 @@ void main() {
     bool needFold = origin * current > 0.0;
     if (needFold) {
         // 当前点移动到对称点位置
-        vec2 symmetric = aPosition + (dist * 2.0) * normalizedDragVec;
-        newPosition = vec3(symmetric.xy, newMaxFoldHeight);
+        newPosition = aPosition + (dist * 2.0) * normalizedDragVec;
         vIsFold = 1.0;
     }
 
@@ -85,7 +80,7 @@ void main() {
     }
 
     // 压缩
-    float radius = (newMaxFoldHeight - newBaseFoldHeight) / 2.0;
+    float radius = newFoldHeight / 2.0;
     float maxDist = PI/2.0 * radius;
     float simpleLight = 1.0;
     if (dist < maxDist) {
@@ -97,5 +92,5 @@ void main() {
         newPosition.y = offsetPosition.y;
     }
 
-    gl_Position = uMVPMatrix * vec4(newPosition.x, newPosition.y, uBaseFoldHeight + (uMaxFoldHeight - uBaseFoldHeight) / 2.0, 1.0);
+    gl_Position = uMVPMatrix * vec4(newPosition.xy, 0.0, 1.0);
 }

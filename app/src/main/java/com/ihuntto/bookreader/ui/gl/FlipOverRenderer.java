@@ -8,10 +8,6 @@ import android.util.Log;
 import com.ihuntto.bookreader.BuildConfig;
 import com.ihuntto.bookreader.flip.FlipOver;
 import com.ihuntto.bookreader.ui.gl.light.Light;
-import com.ihuntto.bookreader.ui.gl.program.FlatPageShaderProgram;
-import com.ihuntto.bookreader.ui.gl.program.FoldPageShaderProgram;
-import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForFlatShaderProgram;
-import com.ihuntto.bookreader.ui.gl.program.FoldPageShadowForSelfShaderProgram;
 import com.ihuntto.bookreader.ui.gl.shape.FlatPage;
 import com.ihuntto.bookreader.ui.gl.shape.FoldPage;
 import com.ihuntto.bookreader.ui.gl.util.TextureManager;
@@ -100,6 +96,9 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        FlatPage.initProgram(mContext);
+        FoldPage.initProgram(mContext);
     }
 
     @Override
@@ -113,27 +112,12 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
         GLES20.glViewport(0, 0, width, height);
         orthoM(mViewProjectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
 
-        int flatHeight = 1;
-        int baseFoldHeight = width / 10;
-        int maxFoldHeight = (int) (width / 5.0f + baseFoldHeight);
+        mFlatPage = new FlatPage(width, height);
 
-        FlatPageShaderProgram flatPageShaderProgram = new FlatPageShaderProgram(mContext);
-        flatPageShaderProgram.compile();
-        mFlatPage = new FlatPage(flatPageShaderProgram, width, height, flatHeight, maxFoldHeight);
+        int foldHeight = (int) (width / 5.0f);
+        mFoldPage = new FoldPage(width, height, foldHeight);
 
-        FoldPageShaderProgram foldPageShaderProgram = new FoldPageShaderProgram(mContext);
-        foldPageShaderProgram.compile();
-        mFoldPage = new FoldPage(foldPageShaderProgram, width, height, baseFoldHeight, maxFoldHeight);
-
-        FoldPageShadowForFlatShaderProgram foldPageShadowForFlatShaderProgram = new FoldPageShadowForFlatShaderProgram(mContext);
-        foldPageShadowForFlatShaderProgram.compile();
-        mFoldPage.setShadowForFlatProgram(foldPageShadowForFlatShaderProgram);
-
-        FoldPageShadowForSelfShaderProgram foldPageShadowForSelfShaderProgram = new FoldPageShadowForSelfShaderProgram(mContext);
-        foldPageShadowForSelfShaderProgram.compile();
-        mFoldPage.setShadowForSelfProgram(foldPageShadowForSelfShaderProgram);
-
-        mConstraintX = maxFoldHeight;
+        mConstraintX = foldHeight;
     }
 
     private void update() {
