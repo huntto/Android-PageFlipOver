@@ -203,8 +203,7 @@ final class FlipOverRenderer implements GLSurfaceView.Renderer {
             mFlatPage.draw(mEyePos, mLight, mViewProjectionMatrix);
             mFoldPage.fold(mWidth, mAnchorY, mCurrentX, mCurrentY);
             mFoldPage.draw(mEyePos, mLight, mViewProjectionMatrix);
-            mFoldPage.drawShadowForFlat(mViewProjectionMatrix);
-            mFoldPage.drawShadowForSelf(mViewProjectionMatrix);
+            mFoldPage.drawShadow(mLight, mViewProjectionMatrix);
         }
         if (mFlipState != STATE_FLIP_NONE) {
             mGLSurfaceView.requestRender();

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.PointF;
 import android.opengl.GLES20;
 
-import com.ihuntto.bookreader.R;
 import com.ihuntto.bookreader.ui.gl.light.Light;
 import com.ihuntto.bookreader.ui.gl.program.ShaderProgram;
 
@@ -44,18 +43,24 @@ public class FoldPage extends Page {
     private static final String A_POSITION = "aPosition";
 
     private static ShaderProgram sFoldProgram;
-    private static ShaderProgram sShadowOnFlatProgram;
-    private static ShaderProgram sShadowOnFoldProgram;
+    private static ShaderProgram sShadowRightProgram;
+    private static ShaderProgram sShadowLeftProgram;
 
     public static void initProgram(Context context) {
-        sFoldProgram = new ShaderProgram(context, R.raw.fold_page_vertex_shader, R.raw.fold_page_fragment_shader);
+        sFoldProgram = new ShaderProgram(context,
+                "fold_page.vert",
+                "fold_page.frag");
         sFoldProgram.compile();
 
-        sShadowOnFlatProgram = new ShaderProgram(context, R.raw.fold_page_shadow_for_flat_vertex_shader, R.raw.fold_page_shadow_for_flat_fragment_shader);
-        sShadowOnFlatProgram.compile();
+        sShadowRightProgram = new ShaderProgram(context,
+                "fold_page_shadow_right.vert",
+                "fold_page_shadow_right.frag");
+        sShadowRightProgram.compile();
 
-        sShadowOnFoldProgram = new ShaderProgram(context, R.raw.fold_page_shadow_for_self_vertex_shader, R.raw.fold_page_shadow_for_self_fragment_shader);
-        sShadowOnFoldProgram.compile();
+        sShadowLeftProgram = new ShaderProgram(context,
+                "fold_page_shadow_left.vert",
+                "fold_page_shadow_left.frag");
+        sShadowLeftProgram.compile();
     }
 
 
@@ -173,34 +178,40 @@ public class FoldPage extends Page {
         GLES20.glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }
 
-    public void drawShadowForFlat(float[] viewProjectionMatrix) {
-        sShadowOnFlatProgram.use();
+    @Override
+    public void drawShadow(Light light, float[] viewProjectionMatrix) {
+        drawShadowLeft(viewProjectionMatrix);
+        drawShadowRight(viewProjectionMatrix);
+    }
+
+    private void drawShadowRight(float[] viewProjectionMatrix) {
+        sShadowRightProgram.use();
 
         multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mShadowForFlatModelMatrix, 0);
-        sShadowOnFlatProgram.setUniformMatrix4fv(U_MVP_MATRIX, mMVPMatrix);
-        sShadowOnFlatProgram.setUniform2f(U_PAGE_SIZE, mWidth, mHeight);
-        sShadowOnFlatProgram.setUniform2f(U_DRAG_POINT, mDragPoint.x, mDragPoint.y);
-        sShadowOnFlatProgram.setUniform2f(U_ORIGIN_POINT, mOriginPoint.x, mOriginPoint.y);
-        sShadowOnFlatProgram.setUniform1f(U_FOLD_HEIGHT, mFoldHeight);
+        sShadowRightProgram.setUniformMatrix4fv(U_MVP_MATRIX, mMVPMatrix);
+        sShadowRightProgram.setUniform2f(U_PAGE_SIZE, mWidth, mHeight);
+        sShadowRightProgram.setUniform2f(U_DRAG_POINT, mDragPoint.x, mDragPoint.y);
+        sShadowRightProgram.setUniform2f(U_ORIGIN_POINT, mOriginPoint.x, mOriginPoint.y);
+        sShadowRightProgram.setUniform1f(U_FOLD_HEIGHT, mFoldHeight);
 
         mVertexData.position(0);
-        sShadowOnFlatProgram.setVertexAttribPointer(A_POSITION, POSITION_COMPONENT_COUNT, mVertexData);
+        sShadowRightProgram.setVertexAttribPointer(A_POSITION, POSITION_COMPONENT_COUNT, mVertexData);
 
         GLES20.glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }
 
-    public void drawShadowForSelf(float[] viewProjectionMatrix) {
-        sShadowOnFoldProgram.use();
+    private void drawShadowLeft(float[] viewProjectionMatrix) {
+        sShadowLeftProgram.use();
 
         multiplyMM(mMVPMatrix, 0, viewProjectionMatrix, 0, mFoldModelMatrix, 0);
-        sShadowOnFoldProgram.setUniformMatrix4fv(U_MVP_MATRIX, mMVPMatrix);
-        sShadowOnFoldProgram.setUniform2f(U_PAGE_SIZE, mWidth, mHeight);
-        sShadowOnFoldProgram.setUniform2f(U_DRAG_POINT, mDragPoint.x, mDragPoint.y);
-        sShadowOnFoldProgram.setUniform2f(U_ORIGIN_POINT, mOriginPoint.x, mOriginPoint.y);
-        sShadowOnFoldProgram.setUniform1f(U_FOLD_HEIGHT, mFoldHeight);
+        sShadowLeftProgram.setUniformMatrix4fv(U_MVP_MATRIX, mMVPMatrix);
+        sShadowLeftProgram.setUniform2f(U_PAGE_SIZE, mWidth, mHeight);
+        sShadowLeftProgram.setUniform2f(U_DRAG_POINT, mDragPoint.x, mDragPoint.y);
+        sShadowLeftProgram.setUniform2f(U_ORIGIN_POINT, mOriginPoint.x, mOriginPoint.y);
+        sShadowLeftProgram.setUniform1f(U_FOLD_HEIGHT, mFoldHeight);
 
         mVertexData.position(0);
-        sShadowOnFoldProgram.setVertexAttribPointer(A_POSITION, POSITION_COMPONENT_COUNT, mVertexData);
+        sShadowLeftProgram.setVertexAttribPointer(A_POSITION, POSITION_COMPONENT_COUNT, mVertexData);
 
         GLES20.glDrawArrays(GL_TRIANGLES, 0, mVertexData.limit() / POSITION_COMPONENT_COUNT);
     }

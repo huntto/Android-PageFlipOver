@@ -1,6 +1,7 @@
 package com.ihuntto.bookreader.ui.gl.program;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.opengl.GLES20;
 
 import com.ihuntto.bookreader.BuildConfig;
@@ -8,8 +9,6 @@ import com.ihuntto.bookreader.ui.gl.util.ShaderHelper;
 import com.ihuntto.bookreader.ui.gl.util.TextResourceReader;
 
 import java.nio.FloatBuffer;
-
-import static android.opengl.GLES20.GL_FLOAT;
 
 public class ShaderProgram {
     private static final boolean D = BuildConfig.DEBUG;
@@ -21,6 +20,12 @@ public class ShaderProgram {
     public ShaderProgram(Context context, int vertexShaderRawId, int fragmentShaderRawId) {
         mVertexShaderSource = TextResourceReader.readTextFromResource(context, vertexShaderRawId);
         mFragmentShaderSource = TextResourceReader.readTextFromResource(context, fragmentShaderRawId);
+    }
+
+    public ShaderProgram(Context context, String vertexShaderAssetPath, String fragmentShaderAssetPath) {
+        Resources resources = context.getResources();
+        mVertexShaderSource = TextResourceReader.readTextFromAsset(resources, vertexShaderAssetPath);
+        mFragmentShaderSource = TextResourceReader.readTextFromAsset(resources, fragmentShaderAssetPath);
     }
 
     public void compile() {
@@ -87,7 +92,7 @@ public class ShaderProgram {
         GLES20.glVertexAttribPointer(
                 location,
                 size,
-                GL_FLOAT,
+                GLES20.GL_FLOAT,
                 false,
                 0,
                 buffer);

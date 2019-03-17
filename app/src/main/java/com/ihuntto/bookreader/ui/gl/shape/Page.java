@@ -9,6 +9,9 @@ public abstract class Page {
         mTextureId = textureId;
     }
 
-    @SuppressWarnings("SuspiciousNameCombination")
     public abstract void draw(final float[] eyePos, final Light light, float[] viewProjectionMatrix);
+
+    public void drawShadow(final Light light, float[] viewProjectionMatrix) {
+        throw new RuntimeException("Not supported");
+    }
 }

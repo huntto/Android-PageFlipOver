@@ -2,7 +2,6 @@ package com.ihuntto.bookreader.ui.gl.shape;
 
 import android.content.Context;
 
-import com.ihuntto.bookreader.R;
 import com.ihuntto.bookreader.ui.gl.light.Light;
 import com.ihuntto.bookreader.ui.gl.program.ShaderProgram;
 
@@ -49,7 +48,9 @@ public class FlatPage extends Page {
     private static ShaderProgram sProgram;
 
     public static void initProgram(Context context) {
-        sProgram = new ShaderProgram(context, R.raw.flat_page_vertex_shader, R.raw.flat_page_fragment_shader);
+        sProgram = new ShaderProgram(context,
+                "flat_page.vert",
+                "flat_page.frag");
         sProgram.compile();
     }
 
@@ -88,7 +89,6 @@ public class FlatPage extends Page {
         multiplyMM(mModelMatrix, 0, scaleMatrix, 0, translateMatrix, 0);
     }
 
-    @SuppressWarnings("SuspiciousNameCombination")
     @Override
     public void draw(final float[] eyePos, final Light light, float[] viewProjectionMatrix) {
         sProgram.use();
